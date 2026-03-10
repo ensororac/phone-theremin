@@ -228,9 +228,27 @@
       transition: background 0.08s, top 0.04s;
     }
 
+    /* ── VIBRATO DEPTH BAR ────────────────────────────────── */
+    #vibrato-track {
+      position: absolute; bottom: 36px; left: 14px; right: 14px;
+      height: 8px;
+      background: rgba(136,0,255,0.06);
+      border: 1px solid rgba(136,0,255,0.12);
+      border-radius: 4px; overflow: hidden;
+      z-index: 2;
+    }
+    #vibrato-fill {
+      position: absolute; top: 0; bottom: 0; left: 0;
+      width: 0%;
+      background: linear-gradient(to right, #8800ff, #ff00ff);
+      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(200,0,255,0.5);
+      transition: width 0.06s linear;
+    }
+
     /* Bottom instruction text */
     #play-hint {
-      position: absolute; bottom: 14px; left: 0; right: 0;
+      position: absolute; bottom: 50px; left: 0; right: 0;
       text-align: center; font-size: 0.52rem;
       color: #223322; letter-spacing: 0.12em;
       pointer-events: none; z-index: 2;
@@ -263,7 +281,7 @@
 
   <div class="start-hint">
     Left panel — touch to control volume<br>
-    Right panel — slide up/down for pitch<br>
+    Right panel — up/down for pitch · left/right for vibrato<br>
     Both required to produce sound<br>
     Lift left hand to silence
   </div>
@@ -293,11 +311,12 @@
 
     <!-- Pitch zone -->
     <div id="pitch-zone">
-      <div class="zone-label">Pitch</div>
+      <div class="zone-label">Pitch · Vibrato</div>
       <!-- Scale marks injected by JS -->
       <div id="pitch-orb"></div>
       <div id="pitch-line"></div>
-      <div id="play-hint">↑ higher pitch<br>lower pitch ↓</div>
+      <div id="vibrato-track"><div id="vibrato-fill"></div></div>
+      <div id="play-hint">↑ higher pitch&nbsp;&nbsp;&nbsp;lower pitch ↓<br>◀ no vibrato&nbsp;&nbsp;&nbsp;vibrato ▶</div>
     </div>
 
   </div>
@@ -307,12 +326,12 @@
 'use strict';
 
 /* ─── CONSTANTS ──────────────────────────────────────────────────── */
-const MIN_FREQ      = 82;     // E2 — bottom of theremin range
-const MAX_FREQ      = 1100;   // C6 — top of theremin range
-const VIBRATO_RATE  = 5.4;    // Hz — natural theremin hand tremor
-const VIBRATO_CENTS = 10;     // cents — subtle wobble depth
-const PORTAMENTO_TC = 0.045;  // seconds — glide time constant
-const RELEASE_TC    = 0.11;   // seconds — smooth mute release
+const MIN_FREQ          = 82;     // E2 — bottom of theremin range
+const MAX_FREQ          = 1100;   // C6 — top of theremin range
+const VIBRATO_RATE      = 5.4;    // Hz — natural theremin hand tremor
+const MAX_VIBRATO_CENTS = 40;     // cents — max vibrato depth at right edge
+const PORTAMENTO_TC     = 0.045;  // seconds — glide time constant
+const RELEASE_TC        = 0.11;   // seconds — smooth mute release
 
 const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
@@ -330,6 +349,7 @@ let masterGain  = null;
 /* ─── TOUCH STATE ────────────────────────────────────────────────── */
 let pitchTouchId = null;
 let volTouchId   = null;
+let pitchTouchX  = 0;     // X position of pitch finger (for vibrato)
 let currentFreq  = 220;
 let currentVol   = 0;
 
@@ -396,7 +416,7 @@ function buildAudio() {
   vibratoOsc.type = 'sine';
   vibratoOsc.frequency.value = VIBRATO_RATE;
   vibratoGain = audioCtx.createGain();
-  vibratoGain.gain.value = VIBRATO_CENTS;
+  vibratoGain.gain.value = 0;  // starts silent — controlled by X position
   vibratoOsc.connect(vibratoGain);
   vibratoGain.connect(mainOsc.detune);
 
@@ -442,6 +462,11 @@ function setVolume(v) {
   exprGain.gain.setTargetAtTime(v * v, audioCtx.currentTime, 0.03);
 }
 
+function setVibrato(depthCents) {
+  if (!audioCtx || !vibratoGain) return;
+  vibratoGain.gain.setTargetAtTime(depthCents, audioCtx.currentTime, 0.08);
+}
+
 function soundOff() {
   if (!audioCtx) return;
   currentVol = 0;
@@ -456,6 +481,7 @@ const volPct      = document.getElementById('vol-pct');
 const volOrb      = document.getElementById('vol-touch-orb');
 const pitchOrb    = document.getElementById('pitch-orb');
 const pitchLine   = document.getElementById('pitch-line');
+const vibratoFill = document.getElementById('vibrato-fill');
 const noteDisplay = document.getElementById('note-display');
 const freqDisplay = document.getElementById('freq-display');
 
@@ -481,10 +507,9 @@ function updatePitchVisual(y, h, active) {
   if (active) {
     const f   = yToPitch(y, h);
     const col = pitchColour(f);
-    const cx  = pitchZone.offsetWidth / 2;
 
     pitchOrb.style.display    = 'block';
-    pitchOrb.style.left       = cx + 'px';
+    pitchOrb.style.left       = pitchTouchX + 'px';  // follows finger horizontally
     pitchOrb.style.top        = y + 'px';
     pitchOrb.style.background = `radial-gradient(circle, ${col}bb 0%, ${col}33 55%, transparent 75%)`;
     pitchOrb.style.boxShadow  = `0 0 28px ${col}88, 0 0 56px ${col}33`;
@@ -506,8 +531,17 @@ function updatePitchVisual(y, h, active) {
     noteDisplay.style.color      = '#00ff99';
     noteDisplay.style.textShadow = '0 0 10px #00ff99';
     freqDisplay.textContent      = '— Hz';
+    vibratoFill.style.width      = '0%';
     pitchZone.classList.remove('active');
   }
+}
+
+/* ─── VIBRATO CALCULATION ────────────────────────────────────────── */
+function applyVibratoFromX(x) {
+  const w = pitchZone.offsetWidth;
+  const ratio = Math.max(0, Math.min(1, x / w));
+  setVibrato(ratio * MAX_VIBRATO_CENTS);
+  vibratoFill.style.width = Math.round(ratio * 100) + '%';
 }
 
 /* ─── SCALE MARKS ────────────────────────────────────────────────── */
@@ -556,7 +590,9 @@ zonesEl.addEventListener('touchstart', e => {
     } else if (!inVolZone(t) && pitchTouchId === null) {
       pitchTouchId = t.identifier;
       const y = zoneY(t, pitchZone);
+      pitchTouchX = t.clientX - pitchZone.getBoundingClientRect().left;
       setPitch(yToPitch(y, h));
+      applyVibratoFromX(pitchTouchX);
       updatePitchVisual(y, h, true);
       if (volTouchId !== null) setVolume(currentVol);
     }
@@ -573,7 +609,9 @@ zonesEl.addEventListener('touchmove', e => {
       if (pitchTouchId !== null) setVolume(yToVol(y, h));
     } else if (t.identifier === pitchTouchId) {
       const y = zoneY(t, pitchZone);
+      pitchTouchX = t.clientX - pitchZone.getBoundingClientRect().left;
       setPitch(yToPitch(y, h));
+      applyVibratoFromX(pitchTouchX);
       updatePitchVisual(y, h, true);
     }
   }
@@ -589,6 +627,7 @@ function handleTouchEnd(e) {
     } else if (t.identifier === pitchTouchId) {
       pitchTouchId = null;
       soundOff();
+      setVibrato(0);
       updatePitchVisual(0, 1, false);
     }
   }
