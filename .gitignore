@@ -1,0 +1,8 @@
+node_modules/
+
+# Capacitor native projects (generated — not committed until ready)
+ios/
+android/
+
+# Build artifacts
+dist/

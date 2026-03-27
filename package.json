@@ -1,0 +1,32 @@
+{
+  "name": "phone-theremin",
+  "version": "1.0.0",
+  "description": "Theremin on a phone",
+  "main": "index.js",
+  "scripts": {
+    "sync": "npx cap sync",
+    "open:ios": "npx cap open ios",
+    "open:android": "npx cap open android",
+    "add:ios": "npx cap add ios",
+    "add:android": "npx cap add android",
+    "build": "echo 'Static app — no build step needed. Run: npm run sync' && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ensororac/phone-theremin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ensororac/phone-theremin/issues"
+  },
+  "homepage": "https://github.com/ensororac/phone-theremin#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/device": "^8.0.2",
+    "@capacitor/ios": "^8.3.0"
+  }
+}
