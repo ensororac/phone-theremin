@@ -1,8 +1,4 @@
 node_modules/
-
-# Capacitor native projects (generated — not committed until ready)
-ios/
-android/
-
-# Build artifacts
-dist/
+build/
+ios-icons/
+.DS_Store
