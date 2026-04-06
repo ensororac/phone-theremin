@@ -1,0 +1,15 @@
+{
+	"appId": "com.ensor.phonetheremin",
+	"appName": "Phone Theremin",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "https"
+	},
+	"ios": {
+		"contentInset": "always"
+	},
+	"plugins": {},
+	"packageClassList": [
+		"DevicePlugin"
+	]
+}
