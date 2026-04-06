@@ -72,7 +72,7 @@
     }
 
     .start-hint {
-      font-size: 0.6rem; color: #334455;
+      font-size: 0.6rem; color: rgba(0,255,153,0.55);
       letter-spacing: 0.14em; text-align: center;
       max-width: 270px; line-height: 2;
       text-transform: uppercase;
@@ -220,21 +220,37 @@
       transition: background 0.08s, top 0.04s;
     }
 
+    /* ── PITCH LEVEL BAR (vertical, right side of pitch zone) ── */
+    #pitch-track {
+      position: absolute; bottom: 56px; right: 16px;
+      width: 24px; height: calc(100% - 100px);
+      background: rgba(80,140,255,0.05);
+      border: 1px solid rgba(80,140,255,0.1);
+      border-radius: 12px; overflow: hidden;
+      z-index: 2;
+    }
+    #pitch-fill {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 0%;
+      border-radius: 12px;
+      transition: height 0.04s linear, background 0.08s;
+    }
+
     /* ── VIBRATO DEPTH BAR ────────────────────────────────── */
     #vibrato-track {
-      position: absolute; bottom: 36px; left: 14px; right: 14px;
-      height: 8px;
-      background: rgba(136,0,255,0.06);
-      border: 1px solid rgba(136,0,255,0.12);
-      border-radius: 4px; overflow: hidden;
+      position: absolute; bottom: 36px; left: 14px; right: 50px;
+      height: 12px;
+      background: rgba(160,0,255,0.12);
+      border: 1px solid rgba(160,0,255,0.25);
+      border-radius: 6px; overflow: hidden;
       z-index: 2;
     }
     #vibrato-fill {
       position: absolute; top: 0; bottom: 0; left: 0;
       width: 0%;
-      background: linear-gradient(to right, #8800ff, #ff00ff);
-      border-radius: 4px;
-      box-shadow: 0 0 8px rgba(200,0,255,0.5);
+      background: linear-gradient(to right, #aa44ff, #ff44ff);
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(200,0,255,0.7);
       transition: width 0.06s linear;
     }
 
@@ -304,6 +320,7 @@
     <div id="pitch-zone">
       <div class="zone-label">Pitch · Vibrato</div>
       <!-- Scale marks injected by JS -->
+      <div id="pitch-track"><div id="pitch-fill"></div></div>
       <div id="pitch-orb"></div>
       <div id="pitch-line"></div>
       <div id="vibrato-track"><div id="vibrato-fill"></div></div>
@@ -360,6 +377,7 @@ function freqToNote(f) {
 }
 
 // Pitch → colour: deep blue → cyan → green → yellow → orange → red
+// Returns hex so alpha suffixes (e.g. col+'88') work in CSS
 function pitchColour(f) {
   const t = Math.log2(f / MIN_FREQ) / Math.log2(MAX_FREQ / MIN_FREQ);
   let r, g, b;
@@ -368,7 +386,8 @@ function pitchColour(f) {
   else if (t < 0.6)  { r=Math.round((t-0.4)/0.2*200); g=255; b=0; }
   else if (t < 0.8)  { r=255; g=Math.round(255-(t-0.6)/0.2*155); b=0; }
   else               { r=255; g=Math.round(100-(t-0.8)/0.2*100); b=0; }
-  return `rgb(${r},${g},${b})`;
+  const hex = '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+  return hex;
 }
 
 /* ─── SYNTHETIC REVERB ───────────────────────────────────────────── */
@@ -473,6 +492,7 @@ const volOrb      = document.getElementById('vol-touch-orb');
 const pitchOrb    = document.getElementById('pitch-orb');
 const pitchLine   = document.getElementById('pitch-line');
 const vibratoFill = document.getElementById('vibrato-fill');
+const pitchTrackFill = document.getElementById('pitch-fill');
 const noteDisplay = document.getElementById('note-display');
 const freqDisplay = document.getElementById('freq-display');
 
@@ -498,9 +518,10 @@ function updatePitchVisual(y, h, active) {
   if (active) {
     const f   = yToPitch(y, h);
     const col = pitchColour(f);
+    const pct = Math.round((1 - Math.max(0, Math.min(1, y / h))) * 100);
 
     pitchOrb.style.display    = 'block';
-    pitchOrb.style.left       = pitchTouchX + 'px';  // follows finger horizontally
+    pitchOrb.style.left       = pitchTouchX + 'px';
     pitchOrb.style.top        = y + 'px';
     pitchOrb.style.background = `radial-gradient(circle, ${col}bb 0%, ${col}33 55%, transparent 75%)`;
     pitchOrb.style.boxShadow  = `0 0 28px ${col}88, 0 0 56px ${col}33`;
@@ -508,6 +529,11 @@ function updatePitchVisual(y, h, active) {
     pitchLine.style.display   = 'block';
     pitchLine.style.top       = y + 'px';
     pitchLine.style.background= `linear-gradient(to right, transparent 0%, ${col}22 10%, ${col}66 50%, ${col}22 90%, transparent 100%)`;
+
+    /* Pitch level bar */
+    pitchTrackFill.style.height     = pct + '%';
+    pitchTrackFill.style.background = `linear-gradient(to top, ${col} 0%, ${col}88 60%, ${col}33 100%)`;
+    pitchTrackFill.style.boxShadow  = `0 0 10px ${col}88`;
 
     noteDisplay.textContent      = freqToNote(f);
     noteDisplay.style.color      = col;
@@ -518,6 +544,7 @@ function updatePitchVisual(y, h, active) {
   } else {
     pitchOrb.style.display    = 'none';
     pitchLine.style.display   = 'none';
+    pitchTrackFill.style.height = '0%';
     noteDisplay.textContent      = '—';
     noteDisplay.style.color      = '#00ff99';
     noteDisplay.style.textShadow = '0 0 10px #00ff99';
@@ -537,6 +564,8 @@ function applyVibratoFromX(x) {
 
 /* ─── SCALE MARKS ────────────────────────────────────────────────── */
 function addScaleMarks() {
+  /* Clear existing marks to avoid duplicates on re-activation */
+  pitchZone.querySelectorAll('.scale-mark').forEach(el => el.remove());
   const marks = [
     { f: 1047, label: 'C6 · 1047 Hz' },
     { f: 523,  label: 'C5 · 523 Hz' },
@@ -635,10 +664,28 @@ document.getElementById('start-btn').addEventListener('click', () => {
   th.style.display = 'flex';
 });
 
-/* App lifecycle: clean up audio when page hides (native app switching) */
+/* App lifecycle: handle background/foreground transitions.
+   iOS requires a user gesture to resume a suspended AudioContext.
+   When returning from background, tear down audio and show the
+   start screen so the ACTIVATE tap provides the required gesture. */
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     soundOff();
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null; mainOsc = null; vibratoOsc = null;
+      vibratoGain = null; exprGain = null;
+    }
+  } else {
+    /* If audio was torn down, show start screen for re-activation */
+    if (!audioCtx) {
+      document.getElementById('theremin').style.display = 'none';
+      document.getElementById('start-screen').style.display = 'flex';
+      /* Reset visual state */
+      volTouchId = null; pitchTouchId = null;
+      updateVolVisual(0, 1, false);
+      updatePitchVisual(0, 1, false);
+    }
   }
 });
 </script>
