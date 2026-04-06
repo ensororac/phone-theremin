@@ -84,11 +84,13 @@
       height: 100dvh; flex-direction: column;
     }
 
-    /* Top bar */
+    /* Top bar — pushed below iOS status bar using safe area inset */
     #info-bar {
       position: absolute; top: 0; left: 0; right: 0;
-      height: 50px; display: flex; align-items: center;
-      justify-content: space-between; padding: 0 14px;
+      height: calc(50px + env(safe-area-inset-top, 20px));
+      padding-top: env(safe-area-inset-top, 20px);
+      display: flex; align-items: center;
+      justify-content: space-between; padding-left: 14px; padding-right: 14px;
       background: rgba(6,6,16,0.92);
       border-bottom: 1px solid rgba(0,255,153,0.12);
       z-index: 10;
@@ -100,23 +102,13 @@
       min-width: 55px; transition: color 0.1s;
     }
     #freq-display {
-      font-size: 0.82rem; color: #448866;
+      font-size: 0.82rem; color: #66bb88;
       letter-spacing: 0.06em;
     }
-    #quit-btn {
-      background: transparent;
-      border: 1px solid rgba(255,80,80,0.45);
-      color: rgba(255,100,100,0.65);
-      font-family: 'Courier New', monospace;
-      font-size: 0.68rem; letter-spacing: 0.2em;
-      padding: 6px 13px; cursor: pointer;
-      text-transform: uppercase; border-radius: 3px;
-    }
-    #quit-btn:active { background: rgba(255,80,80,0.12); }
 
-    /* Play zone container */
+    /* Play zone container — offset below info bar including safe area */
     #zones {
-      position: absolute; top: 50px; bottom: 0;
+      position: absolute; top: calc(50px + env(safe-area-inset-top, 20px)); bottom: 0;
       left: 0; right: 0; display: flex;
     }
 
@@ -133,12 +125,12 @@
     }
 
     .zone-label {
-      font-size: 0.58rem; letter-spacing: 0.28em;
-      text-transform: uppercase; color: #22443322;
-      margin-top: 12px; z-index: 2; transition: color 0.2s;
+      font-size: 0.62rem; letter-spacing: 0.28em;
+      text-transform: uppercase; color: rgba(0,255,153,0.35);
+      margin-top: 16px; z-index: 2; transition: color 0.2s;
     }
-    #vol-zone .zone-label { color: #22553322; }
-    #vol-zone.active .zone-label { color: #00cc66; }
+    #vol-zone .zone-label { color: rgba(0,255,153,0.35); }
+    #vol-zone.active .zone-label { color: #00ff99; }
 
     /* Vertical bar */
     #vol-track {
@@ -192,10 +184,10 @@
       background: linear-gradient(180deg, rgba(40,0,120,0.04) 0%, rgba(0,80,200,0.08) 100%);
     }
     #pitch-zone .zone-label {
-      position: absolute; top: 12px; left: 0; right: 0;
-      text-align: center; color: #11223344;
+      position: absolute; top: 16px; left: 0; right: 0;
+      text-align: center; color: rgba(80,140,255,0.4);
     }
-    #pitch-zone.active .zone-label { color: #4488ff; }
+    #pitch-zone.active .zone-label { color: #66aaff; }
 
     /* Scale tick marks */
     .scale-mark {
@@ -294,7 +286,6 @@
   <div id="info-bar">
     <div id="note-display">—</div>
     <div id="freq-display">— Hz</div>
-    <button id="quit-btn">QUIT ✕</button>
   </div>
 
   <div id="zones">
@@ -644,10 +635,11 @@ document.getElementById('start-btn').addEventListener('click', () => {
   th.style.display = 'flex';
 });
 
-document.getElementById('quit-btn').addEventListener('click', () => {
-  soundOff();
-  if (audioCtx) { setTimeout(() => { audioCtx.close(); audioCtx = null; }, 300); }
-  if (history.length > 1) { history.back(); } else { window.close(); }
+/* App lifecycle: clean up audio when page hides (native app switching) */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    soundOff();
+  }
 });
 </script>
 </body>
