@@ -106,9 +106,84 @@
       letter-spacing: 0.06em;
     }
 
+    /* ── RECORD BUTTON ───────────────────────────────────── */
+    #rec-btn {
+      background: transparent;
+      border: 1.5px solid #ff4466;
+      color: #ff4466;
+      font-family: 'Courier New', monospace;
+      font-size: 0.58rem; letter-spacing: 0.2em;
+      padding: 5px 10px; cursor: pointer;
+      text-transform: uppercase; border-radius: 3px;
+      display: flex; align-items: center; gap: 5px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    #rec-btn:active { opacity: 0.7; }
+    #rec-btn.recording {
+      border-color: #ff2244;
+      color: #ff2244;
+      box-shadow: 0 0 12px rgba(255,34,68,0.5);
+      animation: recPulse 1s ease-in-out infinite;
+    }
+    #rec-btn.saving {
+      border-color: #ffaa00;
+      color: #ffaa00;
+      animation: none;
+    }
+    @keyframes recPulse {
+      0%,100% { box-shadow: 0 0 8px rgba(255,34,68,0.4); }
+      50%      { box-shadow: 0 0 20px rgba(255,34,68,0.8); }
+    }
+    .rec-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #ff4466;
+      transition: background 0.2s;
+    }
+    #rec-btn.recording .rec-dot {
+      background: #ff2244;
+      animation: dotBlink 1s step-start infinite;
+    }
+    #rec-btn.saving .rec-dot { background: #ffaa00; }
+    @keyframes dotBlink {
+      0%,100% { opacity: 1; } 50% { opacity: 0; }
+    }
+
+    /* ── RECORD COUNTDOWN BAR ────────────────────────────── */
+    #rec-bar-wrap {
+      position: absolute;
+      top: calc(50px + env(safe-area-inset-top, 20px));
+      left: 0; right: 0; height: 3px;
+      background: rgba(255,34,68,0.12);
+      z-index: 10; display: none;
+    }
+    #rec-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(to right, #ff4466, #ff2244);
+      box-shadow: 0 0 8px rgba(255,34,68,0.8);
+      transition: width 0.25s linear;
+    }
+
+    /* ── SAVE TOAST ──────────────────────────────────────── */
+    #save-toast {
+      position: fixed;
+      bottom: calc(80px + env(safe-area-inset-bottom, 20px));
+      left: 50%; transform: translateX(-50%);
+      background: rgba(0,255,153,0.12);
+      border: 1px solid rgba(0,255,153,0.35);
+      color: #00ff99;
+      font-size: 0.65rem; letter-spacing: 0.18em;
+      padding: 10px 20px; border-radius: 4px;
+      z-index: 50; display: none;
+      text-transform: uppercase; text-align: center;
+      box-shadow: 0 0 20px rgba(0,255,153,0.2);
+      max-width: 280px;
+    }
+    #save-toast.error { border-color: rgba(255,68,100,0.5); color: #ff6688; background: rgba(255,34,68,0.1); }
+
     /* Play zone container — offset below info bar including safe area */
     #zones {
-      position: absolute; top: calc(50px + env(safe-area-inset-top, 20px)); bottom: 0;
+      position: absolute; top: calc(53px + env(safe-area-inset-top, 20px)); bottom: 0;
       left: 0; right: 0; display: flex;
     }
 
@@ -302,7 +377,17 @@
   <div id="info-bar">
     <div id="note-display">—</div>
     <div id="freq-display">— Hz</div>
+    <button id="rec-btn" title="Record performance">
+      <span class="rec-dot"></span>
+      <span id="rec-label">REC</span>
+    </button>
   </div>
+
+  <!-- Recording countdown bar (sits just below info-bar) -->
+  <div id="rec-bar-wrap"><div id="rec-bar-fill"></div></div>
+
+  <!-- Save toast notification -->
+  <div id="save-toast"></div>
 
   <div id="zones">
 
@@ -334,12 +419,14 @@
 'use strict';
 
 /* ─── CONSTANTS ──────────────────────────────────────────────────── */
-const MIN_FREQ          = 130;    // C3 — bottom of theremin range (2 octave span)
-const MAX_FREQ          = 523;    // C5 — top of theremin range (exactly 2 octaves above C3)
-const VIBRATO_RATE      = 5.4;    // Hz — natural theremin hand tremor
-const MAX_VIBRATO_CENTS = 40;     // cents — max vibrato depth at right edge
-const PORTAMENTO_TC     = 0.045;  // seconds — glide time constant
-const RELEASE_TC        = 0.11;   // seconds — smooth mute release
+const MIN_FREQ          = 130;    // C3
+const MAX_FREQ          = 523;    // C5
+const VIBRATO_RATE      = 5.4;    // Hz
+const MAX_VIBRATO_CENTS = 40;     // cents
+const PORTAMENTO_TC     = 0.045;  // seconds
+const RELEASE_TC        = 0.11;   // seconds
+const REC_MAX_SECS      = 30;     // maximum recording length
+const REC_SAMPLE_RATE   = 22050;  // Hz — mono WAV (sufficient for theremin range)
 
 const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
@@ -348,36 +435,40 @@ let audioCtx    = null;
 let mainOsc     = null;
 let vibratoOsc  = null;
 let vibratoGain = null;
-let exprGain    = null;   // expression/volume control
+let exprGain    = null;
 let dryGain     = null;
 let wetGain     = null;
 let convolver   = null;
 let masterGain  = null;
 
+/* ─── RECORDING STATE ────────────────────────────────────────────── */
+let recNode       = null;   // ScriptProcessorNode
+let recBuffers    = [];     // Float32Array chunks
+let recSamples    = 0;      // total samples collected
+let recording     = false;
+let recTimer      = null;   // countdown interval
+let recStartTime  = 0;
+let recBarAnim    = null;   // requestAnimationFrame handle
+
 /* ─── TOUCH STATE ────────────────────────────────────────────────── */
 let pitchTouchId = null;
 let volTouchId   = null;
-let pitchTouchX  = 0;     // X position of pitch finger (for vibrato)
+let pitchTouchX  = 0;
 let currentFreq  = 220;
 let currentVol   = 0;
 
 /* ─── HELPERS ────────────────────────────────────────────────────── */
 function yToPitch(y, h) {
-  const t = 1 - Math.max(0, Math.min(1, y / h));   // 1=top(high), 0=bottom(low)
+  const t = 1 - Math.max(0, Math.min(1, y / h));
   return MIN_FREQ * Math.pow(MAX_FREQ / MIN_FREQ, t);
 }
-
 function yToVol(y, h) {
-  return 1 - Math.max(0, Math.min(1, y / h));       // 1=top, 0=bottom
+  return 1 - Math.max(0, Math.min(1, y / h));
 }
-
 function freqToNote(f) {
   const midi = Math.round(12 * Math.log2(f / 440)) + 69;
   return NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
 }
-
-// Pitch → colour: deep blue → cyan → green → yellow → orange → red
-// Returns hex so alpha suffixes (e.g. col+'88') work in CSS
 function pitchColour(f) {
   const t = Math.log2(f / MIN_FREQ) / Math.log2(MAX_FREQ / MIN_FREQ);
   let r, g, b;
@@ -386,8 +477,7 @@ function pitchColour(f) {
   else if (t < 0.6)  { r=Math.round((t-0.4)/0.2*200); g=255; b=0; }
   else if (t < 0.8)  { r=255; g=Math.round(255-(t-0.6)/0.2*155); b=0; }
   else               { r=255; g=Math.round(100-(t-0.8)/0.2*100); b=0; }
-  const hex = '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
-  return hex;
+  return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
 }
 
 /* ─── SYNTHETIC REVERB ───────────────────────────────────────────── */
@@ -409,43 +499,35 @@ function buildReverb(ctx) {
 function buildAudio() {
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  // Theremin-like timbre: fundamental + warm lower harmonics
-  // Modelled on classic Leon Theremin instrument analysis
   const hmA = [0, 1.0, 0.48, 0.24, 0.11, 0.055, 0.025, 0.01];
   const real = new Float32Array(hmA);
   const imag = new Float32Array(hmA.length);
   const wave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: false });
 
-  // Main oscillator with theremin wave
   mainOsc = audioCtx.createOscillator();
   mainOsc.setPeriodicWave(wave);
   mainOsc.frequency.value = currentFreq;
 
-  // Vibrato: LFO → detune of main oscillator (in cents)
   vibratoOsc = audioCtx.createOscillator();
   vibratoOsc.type = 'sine';
   vibratoOsc.frequency.value = VIBRATO_RATE;
   vibratoGain = audioCtx.createGain();
-  vibratoGain.gain.value = 0;  // starts silent — controlled by X position
+  vibratoGain.gain.value = 0;
   vibratoOsc.connect(vibratoGain);
   vibratoGain.connect(mainOsc.detune);
 
-  // Expression gain — controlled by volume touch
   exprGain = audioCtx.createGain();
-  exprGain.gain.value = 0;  // silent until touch
+  exprGain.gain.value = 0;
 
-  // Dry / wet reverb split
   dryGain = audioCtx.createGain();
   dryGain.gain.value = 0.7;
   convolver = buildReverb(audioCtx);
   wetGain = audioCtx.createGain();
   wetGain.gain.value = 0.38;
 
-  // Master output
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.88;
 
-  // Wire up
   mainOsc.connect(exprGain);
   exprGain.connect(dryGain);
   exprGain.connect(convolver);
@@ -464,24 +546,215 @@ function setPitch(f) {
   currentFreq = f;
   mainOsc.frequency.setTargetAtTime(f, audioCtx.currentTime, PORTAMENTO_TC);
 }
-
 function setVolume(v) {
   if (!audioCtx) return;
   currentVol = v;
-  // Square for more natural theremin volume curve
   exprGain.gain.setTargetAtTime(v * v, audioCtx.currentTime, 0.03);
 }
-
 function setVibrato(depthCents) {
   if (!audioCtx || !vibratoGain) return;
   vibratoGain.gain.setTargetAtTime(depthCents, audioCtx.currentTime, 0.08);
 }
-
 function soundOff() {
   if (!audioCtx) return;
   currentVol = 0;
   exprGain.gain.setTargetAtTime(0, audioCtx.currentTime, RELEASE_TC);
 }
+
+/* ─── WAV ENCODING ───────────────────────────────────────────────── */
+/*
+ * Encodes a mono Float32Array of PCM samples into a WAV Blob.
+ * Uses the actual AudioContext sample rate.
+ * This runs entirely in JS — no server, no external encoder.
+ */
+function encodeWAV(samples, sampleRate) {
+  const numSamples = samples.length;
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view   = new DataView(buffer);
+
+  function writeStr(offset, str) {
+    for (let i = 0; i < str.length; i++)
+      view.setUint8(offset + i, str.charCodeAt(i));
+  }
+  function floatTo16(f) {
+    const s = Math.max(-1, Math.min(1, f));
+    return s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+
+  // RIFF header
+  writeStr(0,  'RIFF');
+  view.setUint32(4,  36 + numSamples * 2, true);
+  writeStr(8,  'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);          // chunk size
+  view.setUint16(20, 1,  true);          // PCM
+  view.setUint16(22, 1,  true);          // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); // byte rate
+  view.setUint16(32, 2,  true);          // block align
+  view.setUint16(34, 16, true);          // bits per sample
+  writeStr(36, 'data');
+  view.setUint32(40, numSamples * 2, true);
+
+  // PCM samples
+  let offset = 44;
+  for (let i = 0; i < numSamples; i++) {
+    view.setInt16(offset, floatTo16(samples[i]), true);
+    offset += 2;
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+/* ─── RECORDING — START ──────────────────────────────────────────── */
+function startRecording() {
+  if (!audioCtx || recording) return;
+
+  recBuffers   = [];
+  recSamples   = 0;
+  recording    = true;
+  recStartTime = Date.now();
+
+  /*
+   * ScriptProcessorNode taps the master output.
+   * bufferSize=4096 is the most compatible value on iOS WKWebView.
+   * We record mono from channel 0.
+   * NOTE: ScriptProcessorNode is deprecated but AudioWorklet is not
+   * available in Capacitor WKWebView on iOS 16/17 — SPN is the
+   * only reliable approach here.
+   */
+  recNode = audioCtx.createScriptProcessor(4096, 1, 1);
+  masterGain.connect(recNode);
+  recNode.connect(audioCtx.destination);
+
+  const maxSamples = REC_MAX_SECS * audioCtx.sampleRate;
+
+  recNode.onaudioprocess = (e) => {
+    if (!recording) return;
+    const input = e.inputBuffer.getChannelData(0);
+    recBuffers.push(new Float32Array(input)); // copy — input buffer is reused
+    recSamples += input.length;
+
+    if (recSamples >= maxSamples) {
+      stopRecording();
+    }
+  };
+
+  // UI
+  const btn  = document.getElementById('rec-btn');
+  const lbl  = document.getElementById('rec-label');
+  const wrap = document.getElementById('rec-bar-wrap');
+  const fill = document.getElementById('rec-bar-fill');
+
+  btn.classList.add('recording');
+  lbl.textContent = 'STOP';
+  wrap.style.display = 'block';
+  fill.style.width   = '0%';
+
+  // Animate progress bar using rAF for smooth 0→100% over REC_MAX_SECS
+  recBarAnim = requestAnimationFrame(function animBar() {
+    if (!recording) return;
+    const elapsed = (Date.now() - recStartTime) / 1000;
+    const pct     = Math.min(100, (elapsed / REC_MAX_SECS) * 100);
+    fill.style.width = pct + '%';
+    if (pct < 100) recBarAnim = requestAnimationFrame(animBar);
+  });
+}
+
+/* ─── RECORDING — STOP ───────────────────────────────────────────── */
+function stopRecording() {
+  if (!recording) return;
+  recording = false;
+
+  if (recBarAnim) { cancelAnimationFrame(recBarAnim); recBarAnim = null; }
+
+  // Disconnect recorder node
+  if (recNode) {
+    masterGain.disconnect(recNode);
+    recNode.disconnect();
+    recNode.onaudioprocess = null;
+    recNode = null;
+  }
+
+  // UI: saving state
+  const btn  = document.getElementById('rec-btn');
+  const lbl  = document.getElementById('rec-label');
+  const wrap = document.getElementById('rec-bar-wrap');
+  const fill = document.getElementById('rec-bar-fill');
+
+  btn.classList.remove('recording');
+  btn.classList.add('saving');
+  lbl.textContent = '···';
+  fill.style.width = '100%';
+
+  // Assemble all chunks into one Float32Array
+  const merged = new Float32Array(recSamples);
+  let offset = 0;
+  for (const chunk of recBuffers) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  recBuffers = [];
+
+  // Encode and trigger download — small timeout lets UI repaint first
+  setTimeout(() => {
+    try {
+      const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
+      const blob = encodeWAV(merged, sampleRate);
+
+      // Generate timestamped filename
+      const now = new Date();
+      const ts  = now.getFullYear().toString() +
+                  String(now.getMonth()+1).padStart(2,'0') +
+                  String(now.getDate()).padStart(2,'0') + '_' +
+                  String(now.getHours()).padStart(2,'0') +
+                  String(now.getMinutes()).padStart(2,'0') +
+                  String(now.getSeconds()).padStart(2,'0');
+      const filename = 'theremin_' + ts + '.wav';
+
+      // Trigger download — on iOS this opens the share sheet or Files app
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href     = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Revoke after short delay
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+      showToast('Recording saved · ' + filename, false);
+    } catch (err) {
+      console.error('WAV encode error:', err);
+      showToast('Save failed — try again', true);
+    }
+
+    // Reset button
+    btn.classList.remove('saving');
+    lbl.textContent = 'REC';
+    wrap.style.display = 'none';
+    fill.style.width   = '0%';
+  }, 80);
+}
+
+/* ─── TOAST ──────────────────────────────────────────────────────── */
+function showToast(msg, isError) {
+  const toast = document.getElementById('save-toast');
+  toast.textContent = msg;
+  toast.className   = isError ? 'error' : '';
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 4000);
+}
+
+/* ─── REC BUTTON HANDLER ─────────────────────────────────────────── */
+document.getElementById('rec-btn').addEventListener('click', () => {
+  if (recording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+});
 
 /* ─── DOM REFS ───────────────────────────────────────────────────── */
 const volZone     = document.getElementById('vol-zone');
@@ -530,7 +803,6 @@ function updatePitchVisual(y, h, active) {
     pitchLine.style.top       = y + 'px';
     pitchLine.style.background= `linear-gradient(to right, transparent 0%, ${col}22 10%, ${col}66 50%, ${col}22 90%, transparent 100%)`;
 
-    /* Pitch level bar */
     pitchTrackFill.style.height     = pct + '%';
     pitchTrackFill.style.background = `linear-gradient(to top, ${col} 0%, ${col}88 60%, ${col}33 100%)`;
     pitchTrackFill.style.boxShadow  = `0 0 10px ${col}88`;
@@ -564,7 +836,6 @@ function applyVibratoFromX(x) {
 
 /* ─── SCALE MARKS ────────────────────────────────────────────────── */
 function addScaleMarks() {
-  /* Clear existing marks to avoid duplicates on re-activation */
   pitchZone.querySelectorAll('.scale-mark').forEach(el => el.remove());
   const marks = [
     { f: 1047, label: 'C6 · 1047 Hz' },
@@ -590,7 +861,6 @@ function inVolZone(touch) {
   const r = document.getElementById('zones').getBoundingClientRect();
   return (touch.clientX - r.left) < r.width * 0.35;
 }
-
 function zoneY(touch, el) {
   return touch.clientY - el.getBoundingClientRect().top;
 }
@@ -664,27 +934,30 @@ document.getElementById('start-btn').addEventListener('click', () => {
   th.style.display = 'flex';
 });
 
-/* App lifecycle: handle background/foreground transitions.
-   iOS requires a user gesture to resume a suspended AudioContext.
-   When returning from background, tear down audio and show the
-   start screen so the ACTIVATE tap provides the required gesture. */
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    if (recording) stopRecording();
     soundOff();
     if (audioCtx) {
       audioCtx.close().catch(() => {});
       audioCtx = null; mainOsc = null; vibratoOsc = null;
-      vibratoGain = null; exprGain = null;
+      vibratoGain = null; exprGain = null; recNode = null;
     }
   } else {
-    /* If audio was torn down, show start screen for re-activation */
     if (!audioCtx) {
       document.getElementById('theremin').style.display = 'none';
       document.getElementById('start-screen').style.display = 'flex';
-      /* Reset visual state */
       volTouchId = null; pitchTouchId = null;
       updateVolVisual(0, 1, false);
       updatePitchVisual(0, 1, false);
+      // Reset recording UI
+      const btn  = document.getElementById('rec-btn');
+      const lbl  = document.getElementById('rec-label');
+      const wrap = document.getElementById('rec-bar-wrap');
+      btn.classList.remove('recording', 'saving');
+      lbl.textContent = 'REC';
+      wrap.style.display = 'none';
+      recording = false; recBuffers = []; recSamples = 0;
     }
   }
 });
