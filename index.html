@@ -563,9 +563,10 @@ function soundOff() {
 
 /* ─── WAV ENCODING ───────────────────────────────────────────────── */
 /*
- * Encodes a mono Float32Array of PCM samples into a WAV Blob.
- * Uses the actual AudioContext sample rate.
- * This runs entirely in JS — no server, no external encoder.
+ * Encodes a mono Float32Array of PCM samples into a WAV ArrayBuffer.
+ * Returns ArrayBuffer so caller can either:
+ *   - base64-encode it for Capacitor Filesystem API (native iOS)
+ *   - wrap in a Blob for browser <a download> fallback
  */
 function encodeWAV(samples, sampleRate) {
   const numSamples = samples.length;
@@ -603,7 +604,18 @@ function encodeWAV(samples, sampleRate) {
     offset += 2;
   }
 
-  return new Blob([buffer], { type: 'audio/wav' });
+  return buffer; // ArrayBuffer — not Blob
+}
+
+/* Convert ArrayBuffer → base64 string (for Capacitor Filesystem.writeFile) */
+function bufferToBase64(buffer) {
+  const bytes  = new Uint8Array(buffer);
+  let   binary = '';
+  // Process in chunks to avoid call-stack overflow on large arrays
+  const CHUNK = 8192;
+  for (let i = 0; i < bytes.byteLength; i += CHUNK)
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  return btoa(binary);
 }
 
 /* ─── RECORDING — START ──────────────────────────────────────────── */
@@ -696,11 +708,11 @@ function stopRecording() {
   }
   recBuffers = [];
 
-  // Encode and trigger download — small timeout lets UI repaint first
-  setTimeout(() => {
+  // Encode and save — small timeout lets UI repaint first
+  setTimeout(async () => {
     try {
       const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
-      const blob = encodeWAV(merged, sampleRate);
+      const wavBuffer  = encodeWAV(merged, sampleRate); // returns ArrayBuffer
 
       // Generate timestamped filename
       const now = new Date();
@@ -712,22 +724,38 @@ function stopRecording() {
                   String(now.getSeconds()).padStart(2,'0');
       const filename = 'theremin_' + ts + '.wav';
 
-      // Trigger download — on iOS this opens the share sheet or Files app
-      const url  = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href     = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Revoke after short delay
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-      showToast('Recording saved · ' + filename, false);
+      if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        // ── NATIVE iOS: write to cache dir + trigger Share Sheet ──
+        // Capacitor plugins are available as globals injected by the bridge
+        const base64 = bufferToBase64(wavBuffer);
+        const { uri } = await Capacitor.Plugins.Filesystem.writeFile({
+          path: filename,
+          data: base64,
+          directory: 'CACHE',
+          encoding: 'base64'
+        });
+        await Capacitor.Plugins.Share.share({
+          title: 'Phone Theremin Recording',
+          text:  'My theremin performance',
+          url:   uri,
+          dialogTitle: 'Save or share your recording'
+        });
+        showToast('Share sheet opened · choose Files to save', false);
+      } else {
+        // ── WEB BROWSER fallback ──
+        const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        showToast('Recording saved · ' + filename, false);
+      }
     } catch (err) {
-      console.error('WAV encode error:', err);
-      showToast('Save failed — try again', true);
+      console.error('WAV save error:', err);
+      showToast('Save failed — ' + (err.message || 'try again'), true);
     }
 
     // Reset button
