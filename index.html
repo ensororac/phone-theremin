@@ -735,14 +735,16 @@ function stopRecording() {
       const filename = 'theremin_' + ts + '.wav';
 
       if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-        // ── NATIVE iOS: write to cache dir + trigger Share Sheet ──
-        // Capacitor plugins are available as globals injected by the bridge
+        // ── NATIVE iOS: write to Documents dir + trigger Share Sheet ──
+        // IMPORTANT: omit 'encoding' entirely for binary/base64 writes.
+        // Passing encoding:'base64' is WRONG — Capacitor only accepts
+        // 'utf8'/'ascii'/'utf16' for encoding; omitting it means the
+        // plugin treats data as base64 and decodes it to binary on disk.
         const base64 = bufferToBase64(wavBuffer);
         const { uri } = await Capacitor.Plugins.Filesystem.writeFile({
           path: filename,
           data: base64,
-          directory: 'CACHE',
-          encoding: 'base64'
+          directory: 'DOCUMENTS'
         });
         await Capacitor.Plugins.Share.share({
           title: 'Phone Theremin Recording',
