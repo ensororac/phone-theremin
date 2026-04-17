@@ -607,15 +607,25 @@ function encodeWAV(samples, sampleRate) {
   return buffer; // ArrayBuffer — not Blob
 }
 
-/* Convert ArrayBuffer → base64 string (for Capacitor Filesystem.writeFile) */
+/* Convert ArrayBuffer → base64 string (for Capacitor Filesystem.writeFile)
+ *
+ * IMPORTANT: btoa() encodes 3 raw bytes → 4 base64 chars.
+ * We must NOT split the binary string at arbitrary byte boundaries
+ * and call btoa() per-chunk — that corrupts the base64 at every seam.
+ * Instead we build the complete binary string first, then call btoa once.
+ *
+ * For files up to ~10MB (well within our 30s WAV max of ~5MB),
+ * building the full string via a DataView loop is safe and fast.
+ */
 function bufferToBase64(buffer) {
   const bytes  = new Uint8Array(buffer);
-  let   binary = '';
-  // Process in chunks to avoid call-stack overflow on large arrays
-  const CHUNK = 8192;
-  for (let i = 0; i < bytes.byteLength; i += CHUNK)
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  return btoa(binary);
+  const len    = bytes.byteLength;
+  // Build binary string byte-by-byte — avoids spread call-stack overflow
+  // and keeps the full string intact for a single btoa() call
+  const chars  = new Array(len);
+  for (let i = 0; i < len; i++)
+    chars[i] = String.fromCharCode(bytes[i]);
+  return btoa(chars.join(''));
 }
 
 /* ─── RECORDING — START ──────────────────────────────────────────── */
