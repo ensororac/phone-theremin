@@ -78,11 +78,11 @@
       text-transform: uppercase;
     }
     .start-hint-rec {
-      font-size: 0.55rem; color: rgba(255,68,102,0.55);
+      font-size: 0.55rem; color: rgba(255,68,102,0.90);
       letter-spacing: 0.13em; text-align: center;
       max-width: 270px; line-height: 1.8;
       text-transform: uppercase;
-      border-top: 1px solid rgba(255,68,102,0.15);
+      border-top: 1px solid rgba(255,68,102,0.35);
       padding-top: 10px;
     }
 
@@ -157,10 +157,10 @@
       0%,100% { opacity: 1; } 50% { opacity: 0; }
     }
 
-    /* ── RECORD COUNTDOWN BAR (+2mm lower, with countdown label) ── */
+    /* ── RECORD COUNTDOWN BAR (1px above the green info-bar divider line) ── */
     #rec-bar-wrap {
       position: absolute;
-      top: calc(50px + env(safe-area-inset-top, 20px) + 8px); /* ~2mm lower */
+      top: calc(50px + env(safe-area-inset-top, 20px) - 4px); /* 3px bar ends 1px above the border */
       left: 0; right: 0; height: 3px;
       background: rgba(255,34,68,0.12);
       z-index: 10; display: none;
@@ -171,10 +171,10 @@
       box-shadow: 0 0 8px rgba(255,34,68,0.8);
       transition: width 0.25s linear;
     }
-    /* Countdown seconds label — sits right of the bar */
+    /* Countdown seconds label — sits just below the bar */
     #rec-countdown {
       position: absolute;
-      top: calc(50px + env(safe-area-inset-top, 20px) + 14px); /* below bar */
+      top: calc(50px + env(safe-area-inset-top, 20px) + 2px); /* just below the bar */
       right: 14px;
       font-size: 0.55rem; letter-spacing: 0.12em;
       color: rgba(255,68,102,0.75);
@@ -206,9 +206,9 @@
       left: 0; right: 0; display: flex;
     }
 
-    /* ── VOLUME ZONE (left 35%) ───────────────────────────── */
+    /* ── VOLUME ZONE (left 25%) ───────────────────────────── */
     #vol-zone {
-      width: 35%; height: 100%; position: relative;
+      width: 25%; height: 100%; position: relative;
       display: flex; flex-direction: column; align-items: center;
       overflow: hidden;
       background: linear-gradient(180deg, rgba(0,255,153,0.015) 0%, rgba(0,255,153,0.03) 100%);
@@ -352,7 +352,7 @@
     #play-hint {
       position: absolute; bottom: 50px; left: 0; right: 0;
       text-align: center; font-size: 0.52rem;
-      color: #223322; letter-spacing: 0.12em;
+      color: rgba(0,255,153,0.55); letter-spacing: 0.12em;
       pointer-events: none; z-index: 2;
       text-transform: uppercase; line-height: 1.9;
     }
@@ -391,7 +391,7 @@
   <div class="start-hint-rec">
     ● Rec — tap to record up to 30 seconds<br>
     tap again to stop early<br>
-    share sheet will open to save your .wav file
+    share screen will open to save your .wav file
   </div>
 
 </div>
