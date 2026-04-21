@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Phone Theremin support — how to play, tips, and contact.">
+  <title>Phone Theremin · Support</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:   #00ff99;
+      --green2:  #00cc66;
+      --green3:  #009944;
+      --blue:    #00ccff;
+      --purple:  #aa44ff;
+      --red:     #ff4466;
+      --bg:      #060610;
+      --bg2:     #0a0a18;
+      --bg3:     #0f0f22;
+      --border:  rgba(0,255,153,0.12);
+      --text:    #c0c8e0;
+      --muted:   #6b7280;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0;
+      background: rgba(6,6,16,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-logo {
+      width: 32px; height: 32px; border-radius: 8px;
+    }
+
+    .nav-title {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--green);
+      text-shadow: 0 0 8px var(--green);
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex; gap: 24px;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--green); }
+    .nav-links a.active { color: var(--green); }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 64px 24px 48px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0,255,153,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-icon {
+      width: 96px; height: 96px;
+      border-radius: 22px;
+      margin: 0 auto 24px;
+      display: block;
+      box-shadow: 0 0 40px rgba(0,255,153,0.25), 0 8px 32px rgba(0,0,0,0.6);
+    }
+
+    .hero h1 {
+      font-family: 'Courier New', monospace;
+      font-size: 2.2rem; font-weight: 900;
+      letter-spacing: 0.25em;
+      color: var(--green);
+      text-shadow: 0 0 16px var(--green), 0 0 40px var(--green2);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .hero-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── MAIN CONTENT ── */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── SECTION ── */
+    section {
+      margin-bottom: 56px;
+    }
+
+    section h2 {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    p {
+      color: var(--text);
+      margin-bottom: 14px;
+      font-size: 0.95rem;
+    }
+
+    /* ── HOW TO PLAY DIAGRAM ── */
+    .play-diagram {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin: 24px 0;
+      display: flex;
+      gap: 0;
+      min-height: 240px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .play-diagram::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,255,153,0.02) 0%, transparent 70%);
+    }
+
+    .zone-vol {
+      width: 28%;
+      border-right: 1px solid rgba(0,255,153,0.3);
+      padding-right: 20px;
+      display: flex; flex-direction: column;
+      gap: 12px;
+    }
+
+    .zone-pitch {
+      flex: 1;
+      padding-left: 20px;
+      display: flex; flex-direction: column;
+      gap: 12px;
+    }
+
+    .zone-title {
+      font-family: 'Courier New', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .zone-desc {
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .zone-tip {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .zone-arrows {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-top: 4px;
+    }
+
+    .arrow-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: var(--muted);
+    }
+
+    .arrow-row .arrow { color: var(--blue); font-size: 1rem; }
+    .arrow-row.vol-row .arrow { color: var(--green); }
+    .arrow-row.vib-row .arrow { color: var(--purple); }
+
+    /* ── STEP CARDS ── */
+    .steps {
+      display: flex; flex-direction: column; gap: 14px;
+      margin: 20px 0;
+    }
+
+    .step {
+      display: flex; gap: 16px; align-items: flex-start;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    .step-num {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem; font-weight: 900;
+      color: var(--green);
+      text-shadow: 0 0 10px var(--green);
+      min-width: 28px;
+      line-height: 1.4;
+    }
+
+    .step-body { flex: 1; }
+
+    .step-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* ── TIPS ── */
+    .tips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .tip-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .tip-icon {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .tip-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+
+    .tip-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* ── RECORDING SECTION ── */
+    .rec-steps {
+      display: flex; flex-direction: column; gap: 10px;
+      margin: 20px 0;
+    }
+
+    .rec-step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 12px 16px;
+      background: rgba(255,68,102,0.05);
+      border: 1px solid rgba(255,68,102,0.15);
+      border-radius: 10px;
+    }
+
+    .rec-dot-page {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
+      margin-top: 5px;
+      box-shadow: 0 0 8px var(--red);
+    }
+
+    .rec-step-text { font-size: 0.85rem; color: var(--text); margin: 0; }
+    .rec-step-text strong { color: #e2e8f0; }
+
+    /* ── FAQ ── */
+    .faq { display: flex; flex-direction: column; gap: 14px; }
+
+    .faq-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .faq-q {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .faq-a {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* ── CONTACT ── */
+    .contact-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .contact-box .contact-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .contact-box h3 {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+
+    .contact-box p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .contact-email {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: var(--green);
+      text-decoration: none;
+      border: 1px solid rgba(0,255,153,0.3);
+      border-radius: 8px;
+      padding: 10px 24px;
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+      box-shadow: 0 0 16px rgba(0,255,153,0.1);
+    }
+
+    .contact-email:hover {
+      background: rgba(0,255,153,0.08);
+      box-shadow: 0 0 24px rgba(0,255,153,0.2);
+    }
+
+    .response-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 14px;
+      margin-bottom: 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px;
+      text-align: center;
+    }
+
+    footer p {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin: 0;
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--green); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.6rem; letter-spacing: 0.15em; }
+      .play-diagram { flex-direction: column; }
+      .zone-vol { width: 100%; border-right: none; border-bottom: 1px solid rgba(0,255,153,0.3); padding-right: 0; padding-bottom: 20px; }
+      .zone-pitch { padding-left: 0; padding-top: 20px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="https://ensororac.github.io/phone-theremin/" class="nav-brand">
+    <img src="../assets/icon.png" alt="Phone Theremin" class="nav-logo">
+    <span class="nav-title">Phone Theremin</span>
+  </a>
+  <div class="nav-links">
+    <a href="https://ensororac.github.io/phone-theremin/">App</a>
+    <a href="#how-to-play">How to Play</a>
+    <a href="#recording">Recording</a>
+    <a href="#faq">FAQ</a>
+    <a href="#contact" class="active">Support</a>
+    <a href="../privacy/">Privacy</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <img src="../assets/icon.png" alt="Phone Theremin icon" class="hero-icon">
+  <h1>Support</h1>
+  <p class="hero-sub">Phone Theremin · Version 1.0</p>
+</div>
+
+<main>
+
+  <!-- HOW TO PLAY -->
+  <section id="how-to-play">
+    <h2>How to Play</h2>
+
+    <p>Phone Theremin turns your screen into a two-zone touch instrument. One hand controls volume, the other controls pitch — just like a real theremin.</p>
+
+    <div class="play-diagram">
+      <div class="zone-vol">
+        <div class="zone-title">Left Zone<br>Volume</div>
+        <div class="zone-desc">Touch anywhere in the left panel to activate sound. Slide your finger up and down to control volume.</div>
+        <div class="zone-arrows">
+          <div class="arrow-row vol-row"><span class="arrow">↑</span> louder</div>
+          <div class="arrow-row vol-row"><span class="arrow">↓</span> quieter</div>
+        </div>
+        <div class="zone-tip">Lift your finger to silence the instrument instantly.</div>
+      </div>
+      <div class="zone-pitch">
+        <div class="zone-title">Right Zone<br>Pitch · Vibrato</div>
+        <div class="zone-desc">Slide up and down to change the pitch across a two-octave range (C3 to C5). Move left and right to control vibrato depth.</div>
+        <div class="zone-arrows">
+          <div class="arrow-row"><span class="arrow">↑</span> higher pitch</div>
+          <div class="arrow-row"><span class="arrow">↓</span> lower pitch</div>
+          <div class="arrow-row vib-row"><span class="arrow">◀</span> no vibrato</div>
+          <div class="arrow-row vib-row"><span class="arrow">▶</span> full vibrato</div>
+        </div>
+        <div class="zone-tip">Scale markers show C3, C4, A4, and C5 as reference points.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Open the app and tap ACTIVATE</div>
+          <p class="step-desc">The activate button unlocks audio — iOS requires a tap gesture before any sound can play.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Place your left finger on the left panel</div>
+          <p class="step-desc">Touch anywhere in the left zone to engage the volume control. You won't hear anything yet — your right hand needs to touch the pitch zone too.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Place your right finger on the right panel</div>
+          <p class="step-desc">Both fingers on screen at the same time — you'll hear the theremin sound immediately. Slide to play.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Lift your left hand to silence</div>
+          <p class="step-desc">Like a real theremin — removing the volume hand cuts the sound. Use this for phrasing and note separation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIPS -->
+  <section id="tips">
+    <h2>Playing Tips</h2>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <span class="tip-icon">🎵</span>
+        <div class="tip-title">Use the scale markers</div>
+        <p class="tip-desc">The faint horizontal lines mark C3, C4, A4 (440 Hz), and C5. Use them as reference points to find familiar notes.</p>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">✋</span>
+        <div class="tip-title">Landscape is easier</div>
+        <p class="tip-desc">Rotating to landscape gives your right hand more horizontal space, making vibrato control much smoother.</p>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">🎸</span>
+        <div class="tip-title">Slow vibrato is expressive</div>
+        <p class="tip-desc">For that classic theremin sound, let your finger drift gently left and right on the pitch zone rather than staying still.</p>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">🔇</span>
+        <div class="tip-title">Volume control is your bow</div>
+        <p class="tip-desc">A real theremin's left hand shapes each note — try moving volume up to swell into a note and back down to fade out.</p>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">📱</span>
+        <div class="tip-title">Turn up your volume</div>
+        <p class="tip-desc">The app respects your device volume. For full theremin sound, set your iPhone volume to maximum and use the in-app volume zone to shape dynamics.</p>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">🎹</span>
+        <div class="tip-title">A4 = 440 Hz</div>
+        <p class="tip-desc">The A4 marker is your tuning reference. If you're playing along with another instrument, find A4 first and use it to orient your pitch.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECORDING -->
+  <section id="recording">
+    <h2>Recording Your Performance</h2>
+
+    <p>Phone Theremin can record up to 30 seconds of audio and save it as a WAV file to your device.</p>
+
+    <div class="rec-steps">
+      <div class="rec-step">
+        <div class="rec-dot-page"></div>
+        <p class="rec-step-text"><strong>Tap REC</strong> in the top-right corner to start recording. The button turns red and a countdown bar appears.</p>
+      </div>
+      <div class="rec-step">
+        <div class="rec-dot-page"></div>
+        <p class="rec-step-text"><strong>Play your performance.</strong> The recording captures everything including reverb — up to 30 seconds.</p>
+      </div>
+      <div class="rec-step">
+        <div class="rec-dot-page"></div>
+        <p class="rec-step-text"><strong>Tap STOP</strong> to finish early, or let the bar reach 30 seconds. Recording stops automatically.</p>
+      </div>
+      <div class="rec-step">
+        <div class="rec-dot-page"></div>
+        <p class="rec-step-text"><strong>iOS Share Sheet opens</strong> automatically. Tap <em>Save to Files</em> to save the WAV to your device, or share it directly to Messages, Mail, or another app.</p>
+      </div>
+    </div>
+
+    <p style="font-size:0.82rem; color: var(--muted);">Recordings are saved as uncompressed WAV files (22 kHz mono). They are not stored on any server — everything stays on your device.</p>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq">
+
+      <div class="faq-item">
+        <div class="faq-q">I tapped ACTIVATE but I can't hear anything.</div>
+        <p class="faq-a">Make sure both fingers are on screen at the same time — one in the left (volume) zone and one in the right (pitch) zone. Also check that your device isn't on silent/mute and that the volume is turned up.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">The sound cuts out when I switch apps.</div>
+        <p class="faq-a">This is by design. Phone Theremin silences audio when it goes to the background, the same way a real theremin stops when you step away. Tap ACTIVATE again when you return to the app.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">My recording sounds distorted or corrupt.</div>
+        <p class="faq-a">This can happen if your device is low on memory. Try closing other apps and recording again. Also make sure you have free storage space in your Files app.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">The Share Sheet didn't appear after recording.</div>
+        <p class="faq-a">This may happen if iOS interrupted the recording. Try again — tap REC, play for a few seconds, then tap STOP. The share sheet should appear within a second or two.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Can I play in landscape mode?</div>
+        <p class="faq-a">Yes — the app supports both portrait and landscape. Landscape gives you more horizontal space in the pitch zone, which makes vibrato control easier.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Does Phone Theremin work offline?</div>
+        <p class="faq-a">Yes, completely. No internet connection is required. No data is collected or transmitted.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What iOS version is required?</div>
+        <p class="faq-a">Phone Theremin requires iOS 16 or later. It has been tested on iPhone SE (2nd gen), iPhone 14, and iPhone 15 Pro.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <h2>Contact Support</h2>
+    <div class="contact-box">
+      <span class="contact-icon">✉️</span>
+      <h3>Get in touch</h3>
+      <p>Have a question or found a bug? Send us an email and we'll get back to you.</p>
+      <a href="mailto:support@phonetheremin.app" class="contact-email">support@phonetheremin.app</a>
+      <p class="response-note">We aim to respond within 2 business days.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    &copy; 2026 Phone Theremin &nbsp;·&nbsp;
+    <a href="https://ensororac.github.io/phone-theremin/">App</a> &nbsp;·&nbsp;
+    <a href="../privacy/">Privacy Policy</a> &nbsp;·&nbsp;
+    <a href="mailto:support@phonetheremin.app">Contact</a>
+  </p>
+</footer>
+
+</body>
+</html>
