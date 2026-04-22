@@ -2,1041 +2,902 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Phone Theremin — turn your iPhone or Android phone into a touchscreen theremin. Free, no sign-up, works offline. Available on the App Store.">
+  <meta property="og:title" content="Phone Theremin">
+  <meta property="og:description" content="Turn your phone into a touchscreen theremin. Play pitch and volume with your fingertips.">
+  <meta property="og:image" content="https://ensororac.github.io/phone-theremin/assets/icon.png">
   <title>Phone Theremin</title>
   <style>
-    *, *::before, *::after {
-      margin: 0; padding: 0; box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none; -webkit-user-select: none;
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:  #00ff99;
+      --green2: #00cc66;
+      --green3: #009944;
+      --blue:   #00ccff;
+      --purple: #aa44ff;
+      --red:    #ff4466;
+      --bg:     #060610;
+      --bg2:    #0a0a18;
+      --bg3:    #0f0f22;
+      --border: rgba(0,255,153,0.12);
+      --text:   #c0c8e0;
+      --muted:  #6b7280;
     }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      background: #060610;
-      color: #c0c8e0;
-      font-family: 'Courier New', Courier, monospace;
-      overflow: hidden;
-      height: 100dvh;
-      width: 100vw;
-      touch-action: none;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.7;
+      min-height: 100vh;
     }
 
-    /* ── START SCREEN ─────────────────────────────────────── */
-    #start-screen {
-      position: fixed; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: #060610; z-index: 200; gap: 28px;
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0;
+      background: rgba(6,6,16,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
     }
 
-    .antenna-svg {
-      width: 80px; opacity: 0.6;
-      animation: antGlow 3s ease-in-out infinite;
-    }
-    @keyframes antGlow {
-      0%,100% { opacity: 0.5; } 50% { opacity: 1; }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
     }
 
-    .title-main {
-      font-size: 2.8rem; font-weight: 900;
-      letter-spacing: 0.35em; color: #00ff99;
-      text-shadow: 0 0 12px #00ff99, 0 0 40px #00cc66, 0 0 80px #009944;
-      animation: titlePulse 4s ease-in-out infinite;
-    }
-    .title-sub {
-      font-size: 0.68rem; letter-spacing: 0.22em;
-      color: #33996655; margin-top: -18px;
-      text-transform: uppercase;
-    }
-    @keyframes titlePulse {
-      0%,100% { text-shadow: 0 0 12px #00ff99, 0 0 40px #00cc66, 0 0 80px #009944; }
-      50%      { text-shadow: 0 0 20px #00ff99, 0 0 60px #00cc66, 0 0 120px #009944; }
+    .nav-logo {
+      width: 32px; height: 32px; border-radius: 8px;
     }
 
-    .start-btn {
-      background: transparent;
-      border: 1.5px solid #00ff99;
-      color: #00ff99;
+    .nav-title {
       font-family: 'Courier New', monospace;
-      font-size: 1rem; letter-spacing: 0.35em;
-      padding: 15px 44px; cursor: pointer;
-      text-transform: uppercase; border-radius: 3px;
-      box-shadow: 0 0 22px rgba(0,255,153,0.28), inset 0 0 22px rgba(0,255,153,0.05);
-      animation: btnPulse 2.5s ease-in-out infinite;
-    }
-    @keyframes btnPulse {
-      0%,100% { box-shadow: 0 0 22px rgba(0,255,153,0.28), inset 0 0 22px rgba(0,255,153,0.05); }
-      50%      { box-shadow: 0 0 42px rgba(0,255,153,0.55), inset 0 0 32px rgba(0,255,153,0.10); }
-    }
-
-    .start-hint {
-      font-size: 0.6rem; color: rgba(0,255,153,0.55);
-      letter-spacing: 0.14em; text-align: center;
-      max-width: 270px; line-height: 2;
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--green);
+      text-shadow: 0 0 8px var(--green);
       text-transform: uppercase;
     }
-    .start-hint-rec {
-      font-size: 0.55rem; color: rgba(255,68,102,0.90);
-      letter-spacing: 0.13em; text-align: center;
-      max-width: 270px; line-height: 1.8;
-      text-transform: uppercase;
-      border-top: 1px solid rgba(255,68,102,0.35);
-      padding-top: 10px;
+
+    .nav-links {
+      display: flex; gap: 24px;
     }
 
-    /* ── MAIN INTERFACE ───────────────────────────────────── */
-    #theremin {
-      display: none; position: fixed; inset: 0;
-      height: 100dvh; flex-direction: column;
-    }
-
-    /* Top bar — pushed below iOS status bar using safe area inset */
-    #info-bar {
-      position: absolute; top: 0; left: 0; right: 0;
-      height: calc(50px + env(safe-area-inset-top, 20px));
-      padding-top: env(safe-area-inset-top, 20px);
-      display: flex; align-items: center;
-      justify-content: space-between; padding-left: 14px; padding-right: 14px;
-      background: rgba(6,6,16,0.92);
-      border-bottom: 1px solid rgba(0,255,153,0.12);
-      z-index: 10;
-    }
-    #note-display {
-      font-size: 1.35rem; font-weight: bold;
-      color: #00ff99; letter-spacing: 0.08em;
-      text-shadow: 0 0 10px #00ff99;
-      min-width: 55px; transition: color 0.1s;
-    }
-    #freq-display {
-      font-size: 0.82rem; color: #66bb88;
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
       letter-spacing: 0.06em;
-    }
-
-    /* ── RECORD BUTTON (+15% size) ─────────────────────── */
-    #rec-btn {
-      background: transparent;
-      border: 1.5px solid #ff4466;
-      color: #ff4466;
-      font-family: 'Courier New', monospace;
-      font-size: 0.668rem; letter-spacing: 0.2em; /* +15% from 0.58rem */
-      padding: 6px 12px; cursor: pointer;           /* +15% from 5/10px */
-      text-transform: uppercase; border-radius: 3px;
-      display: flex; align-items: center; gap: 6px;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    #rec-btn:active { opacity: 0.7; }
-    #rec-btn.recording {
-      border-color: #ff2244;
-      color: #ff2244;
-      box-shadow: 0 0 12px rgba(255,34,68,0.5);
-      animation: recPulse 1s ease-in-out infinite;
-    }
-    #rec-btn.saving {
-      border-color: #ffaa00;
-      color: #ffaa00;
-      animation: none;
-    }
-    @keyframes recPulse {
-      0%,100% { box-shadow: 0 0 8px rgba(255,34,68,0.4); }
-      50%      { box-shadow: 0 0 20px rgba(255,34,68,0.8); }
-    }
-    .rec-dot {
-      width: 8px; height: 8px; border-radius: 50%; /* +15% from 7px */
-      background: #ff4466;
-      transition: background 0.2s;
-    }
-    #rec-btn.recording .rec-dot {
-      background: #ff2244;
-      animation: dotBlink 1s step-start infinite;
-    }
-    #rec-btn.saving .rec-dot { background: #ffaa00; }
-    @keyframes dotBlink {
-      0%,100% { opacity: 1; } 50% { opacity: 0; }
-    }
-
-    /* ── RECORD COUNTDOWN BAR (1px above the green info-bar divider line) ── */
-    #rec-bar-wrap {
-      position: absolute;
-      top: calc(50px + env(safe-area-inset-top, 20px) - 4px); /* 3px bar ends 1px above the border */
-      left: 0; right: 0; height: 3px;
-      background: rgba(255,34,68,0.12);
-      z-index: 10; display: none;
-    }
-    #rec-bar-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(to right, #ff4466, #ff2244);
-      box-shadow: 0 0 8px rgba(255,34,68,0.8);
-      transition: width 0.25s linear;
-    }
-    /* Countdown seconds label — sits just below the bar */
-    #rec-countdown {
-      position: absolute;
-      top: calc(50px + env(safe-area-inset-top, 20px) + 2px); /* just below the bar */
-      right: 14px;
-      font-size: 0.55rem; letter-spacing: 0.12em;
-      color: rgba(255,68,102,0.75);
-      font-family: 'Courier New', monospace;
-      z-index: 10; display: none;
-      text-transform: uppercase;
-    }
-
-    /* ── SAVE TOAST ──────────────────────────────────────── */
-    #save-toast {
-      position: fixed;
-      bottom: calc(80px + env(safe-area-inset-bottom, 20px));
-      left: 50%; transform: translateX(-50%);
-      background: rgba(0,255,153,0.12);
-      border: 1px solid rgba(0,255,153,0.35);
-      color: #00ff99;
-      font-size: 0.65rem; letter-spacing: 0.18em;
-      padding: 10px 20px; border-radius: 4px;
-      z-index: 50; display: none;
-      text-transform: uppercase; text-align: center;
-      box-shadow: 0 0 20px rgba(0,255,153,0.2);
-      max-width: 280px;
-    }
-    #save-toast.error { border-color: rgba(255,68,100,0.5); color: #ff6688; background: rgba(255,34,68,0.1); }
-
-    /* Play zone container — offset below info bar including safe area */
-    #zones {
-      position: absolute; top: calc(53px + env(safe-area-inset-top, 20px)); bottom: 0;
-      left: 0; right: 0; display: flex;
-    }
-
-    /* ── VOLUME ZONE (left 25%) ───────────────────────────── */
-    #vol-zone {
-      width: 25%; height: 100%; position: relative;
-      display: flex; flex-direction: column; align-items: center;
-      overflow: hidden;
-      background: linear-gradient(180deg, rgba(0,255,153,0.015) 0%, rgba(0,255,153,0.03) 100%);
-      transition: background 0.2s;
-    }
-    #vol-zone.active {
-      background: linear-gradient(180deg, rgba(0,255,153,0.03) 0%, rgba(0,255,153,0.06) 100%);
-    }
-
-    .zone-label {
-      font-size: 0.62rem; letter-spacing: 0.28em;
-      text-transform: uppercase; color: rgba(0,255,153,0.35);
-      margin-top: 16px; z-index: 2; transition: color 0.2s;
-    }
-    #vol-zone .zone-label { color: rgba(0,255,153,0.35); }
-    #vol-zone.active .zone-label { color: #00ff99; }
-
-    /* Vertical bar */
-    #vol-track {
-      position: absolute; bottom: 24px; left: 50%;
-      transform: translateX(-50%);
-      width: 24px; height: calc(100% - 72px);
-      background: rgba(0,255,153,0.05);
-      border: 1px solid rgba(0,255,153,0.08);
-      border-radius: 12px; overflow: hidden;
-    }
-    #vol-fill {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      height: 0%;
-      background: linear-gradient(to top, #00ff99 0%, #00ccff 80%, #ffffff33 100%);
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,255,153,0.5);
-      transition: height 0.04s linear;
-    }
-
-    #vol-pct {
-      position: absolute; bottom: 30px;
-      font-size: 0.58rem; color: #22443322; z-index: 2;
       transition: color 0.2s;
     }
-    #vol-zone.active #vol-pct { color: #00aa55; }
 
-    #vol-touch-orb {
-      position: absolute; width: 44px; height: 44px;
-      border-radius: 50%; pointer-events: none; display: none;
-      background: radial-gradient(circle, rgba(0,255,153,0.7) 0%, rgba(0,255,153,0.15) 55%, transparent 80%);
-      box-shadow: 0 0 18px rgba(0,255,153,0.5);
-      transform: translate(-50%, -50%);
-    }
+    .nav-links a:hover { color: var(--green); }
+    .nav-links a.active { color: var(--green); }
 
-    /* ── DIVIDER ──────────────────────────────────────────── */
-    #divider {
-      width: 1px; flex-shrink: 0; height: 100%;
-      background: linear-gradient(to bottom,
-        transparent 0%, rgba(0,255,153,0.22) 15%,
-        rgba(0,255,153,0.45) 50%, rgba(0,255,153,0.22) 85%, transparent 100%);
-      box-shadow: 0 0 7px rgba(0,255,153,0.25);
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 72px 24px 60px;
+      position: relative;
+      overflow: hidden;
     }
 
-    /* ── PITCH ZONE (right 65%) ───────────────────────────── */
-    #pitch-zone {
-      flex: 1; height: 100%; position: relative; overflow: hidden;
-      background: linear-gradient(180deg, rgba(40,0,120,0.025) 0%, rgba(0,80,200,0.04) 100%);
-      transition: background 0.2s;
-    }
-    #pitch-zone.active {
-      background: linear-gradient(180deg, rgba(40,0,120,0.04) 0%, rgba(0,80,200,0.08) 100%);
-    }
-    #pitch-zone .zone-label {
-      position: absolute; top: 16px; left: 0; right: 0;
-      text-align: center; color: rgba(80,140,255,0.4);
-    }
-    #pitch-zone.active .zone-label { color: #66aaff; }
-
-    /* Scale tick marks */
-    .scale-mark {
-      position: absolute; right: 0; left: 0;
-      display: flex; align-items: center;
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(0,255,153,0.08) 0%, transparent 70%);
       pointer-events: none;
     }
-    .scale-line {
-      flex: 1; height: 1px;
-      background: linear-gradient(to right, transparent, rgba(80,120,255,0.18));
-    }
-    .scale-label {
-      font-size: 0.5rem; color: rgba(80,120,255,0.35);
-      letter-spacing: 0.08em; padding: 0 8px 0 4px;
-      white-space: nowrap;
+
+    .hero-logo {
+      width: 120px; height: 120px;
+      border-radius: 28px;
+      margin: 0 auto 28px;
+      display: block;
+      box-shadow: 0 0 60px rgba(0,255,153,0.3), 0 12px 40px rgba(0,0,0,0.7);
     }
 
-    /* Pitch tracking orb */
-    #pitch-orb {
-      position: absolute; width: 78px; height: 78px;
-      border-radius: 50%; pointer-events: none; display: none;
-      transform: translate(-50%, -50%);
-      transition: background 0.08s, box-shadow 0.08s;
+    .hero h1 {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(2rem, 6vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: 0.3em;
+      color: var(--green);
+      text-shadow: 0 0 20px var(--green), 0 0 60px var(--green2), 0 0 120px var(--green3);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      animation: titlePulse 4s ease-in-out infinite;
     }
 
-    /* Horizontal pitch line */
-    #pitch-line {
-      position: absolute; left: 0; right: 0; height: 1px;
-      pointer-events: none; display: none;
-      transition: background 0.08s, top 0.04s;
+    @keyframes titlePulse {
+      0%,100% { text-shadow: 0 0 20px var(--green), 0 0 60px var(--green2), 0 0 120px var(--green3); }
+      50%      { text-shadow: 0 0 32px var(--green), 0 0 90px var(--green2), 0 0 180px var(--green3); }
     }
 
-    /* ── PITCH LEVEL BAR (vertical, right side of pitch zone) ── */
-    #pitch-track {
-      position: absolute; bottom: 56px; right: 16px;
-      width: 24px; height: calc(100% - 100px);
-      background: rgba(80,140,255,0.05);
-      border: 1px solid rgba(80,140,255,0.1);
-      border-radius: 12px; overflow: hidden;
-      z-index: 2;
+    .hero-tagline {
+      font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+      color: var(--text);
+      max-width: 520px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
     }
-    #pitch-fill {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      height: 0%;
+
+    .hero-sub {
+      font-size: 0.72rem;
+      color: rgba(0,255,153,0.55);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    /* ── STORE BADGES ── */
+    .store-badges {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      border: 1.5px solid var(--border);
       border-radius: 12px;
-      transition: height 0.04s linear, background 0.08s;
+      padding: 12px 22px;
+      background: rgba(255,255,255,0.03);
+      transition: all 0.25s;
+      min-width: 180px;
     }
 
-    /* ── VIBRATO DEPTH BAR ────────────────────────────────── */
-    #vibrato-track {
-      position: absolute; bottom: 36px; left: 14px; right: 50px;
-      height: 12px;
-      background: rgba(160,0,255,0.12);
-      border: 1px solid rgba(160,0,255,0.25);
-      border-radius: 6px; overflow: hidden;
-      z-index: 2;
-    }
-    #vibrato-fill {
-      position: absolute; top: 0; bottom: 0; left: 0;
-      width: 0%;
-      background: linear-gradient(to right, #aa44ff, #ff44ff);
-      border-radius: 6px;
-      box-shadow: 0 0 12px rgba(200,0,255,0.7);
-      transition: width 0.06s linear;
+    .store-badge:hover {
+      border-color: rgba(0,255,153,0.4);
+      background: rgba(0,255,153,0.05);
+      box-shadow: 0 0 24px rgba(0,255,153,0.15);
+      transform: translateY(-2px);
     }
 
-    /* Bottom instruction text */
-    #play-hint {
-      position: absolute; bottom: 50px; left: 0; right: 0;
-      text-align: center; font-size: 0.52rem;
-      color: rgba(0,255,153,0.55); letter-spacing: 0.12em;
-      pointer-events: none; z-index: 2;
-      text-transform: uppercase; line-height: 1.9;
+    .store-badge.disabled {
+      opacity: 0.45;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .store-badge svg {
+      flex-shrink: 0;
+    }
+
+    .badge-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .badge-sub {
+      font-size: 0.6rem;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    .badge-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .badge-coming {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+      font-style: italic;
+    }
+
+    .age-rating {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    /* ── SECTION WRAPPER ── */
+    .section-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* ── INTERFACE SHOWCASE ── */
+    .showcase {
+      padding: 72px 0;
+    }
+
+    .showcase-inner {
+      display: flex;
+      gap: 56px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .showcase-visual {
+      flex: 0 0 auto;
+      width: 260px;
+      margin: 0 auto;
+    }
+
+    /* SVG phone mockup */
+    .phone-mockup {
+      width: 100%;
+      filter: drop-shadow(0 0 40px rgba(0,255,153,0.2)) drop-shadow(0 16px 48px rgba(0,0,0,0.7));
+    }
+
+    .showcase-copy {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .section-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 16px;
+    }
+
+    .showcase-copy h2 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      color: #e2e8f0;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+
+    .showcase-copy h2 span {
+      color: var(--green);
+    }
+
+    .showcase-copy p {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 14px;
+      line-height: 1.75;
+    }
+
+    /* ── FEATURE GRID ── */
+    .features {
+      padding: 72px 0;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .features-header h2 {
+      font-size: clamp(1.4rem, 3.5vw, 2rem);
+      font-weight: 800;
+      color: #e2e8f0;
+      margin-bottom: 10px;
+    }
+
+    .features-header p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(0,255,153,0.3);
+      box-shadow: 0 0 24px rgba(0,255,153,0.06);
+    }
+
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works {
+      padding: 72px 0;
+    }
+
+    .hiw-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .hiw-header h2 {
+      font-size: clamp(1.4rem, 3.5vw, 2rem);
+      font-weight: 800;
+      color: #e2e8f0;
+      margin-bottom: 10px;
+    }
+
+    .hiw-header p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .hiw-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .hiw-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+    }
+
+    .hiw-num {
+      font-family: 'Courier New', monospace;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--green);
+      text-shadow: 0 0 12px var(--green);
+      min-width: 32px;
+      line-height: 1.3;
+    }
+
+    .hiw-body { flex: 1; }
+
+    .hiw-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .hiw-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* ── AGE RATING BAND ── */
+    .age-band {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .age-band-inner {
+      display: inline-flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .age-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px; height: 56px;
+      border: 2px solid rgba(0,255,153,0.4);
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green);
+      flex-shrink: 0;
+    }
+
+    .age-band-text h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .age-band-text p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    /* ── DEVELOPER ── */
+    .developer {
+      padding: 72px 0;
+    }
+
+    .dev-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 640px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .dev-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green3), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 30px rgba(0,255,153,0.2);
+    }
+
+    .dev-card h2 {
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+
+    .dev-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .dev-bio {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.7;
+    }
+
+    .dev-email {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--green);
+      text-decoration: none;
+      border: 1px solid rgba(0,255,153,0.3);
+      border-radius: 8px;
+      padding: 10px 22px;
+      letter-spacing: 0.06em;
+      transition: all 0.2s;
+    }
+
+    .dev-email:hover {
+      background: rgba(0,255,153,0.07);
+      box-shadow: 0 0 20px rgba(0,255,153,0.15);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      background: var(--bg2);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--green); }
+
+    footer p {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin: 0;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 680px) {
+      .showcase-inner { flex-direction: column; }
+      .showcase-visual { width: 220px; }
+      nav .nav-links { display: none; }
+      .dev-card { padding: 28px 20px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ═══ START SCREEN ═══════════════════════════════════════════════ -->
-<div id="start-screen">
-
-  <svg class="antenna-svg" viewBox="0 0 80 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="35" y="80" width="10" height="38" rx="5" fill="#00ff99" opacity="0.8"/>
-    <line x1="40" y1="80" x2="40" y2="4" stroke="#00ff99" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="40" cy="4" r="4" fill="#00ff99"/>
-    <circle cx="40" cy="4" r="8" fill="#00ff99" opacity="0.25"/>
-    <circle cx="40" cy="4" r="14" fill="#00ff99" opacity="0.1"/>
-    <ellipse cx="18" cy="96" rx="18" ry="8" stroke="#00ff99" stroke-width="2" opacity="0.6"/>
-    <line x1="18" y1="88" x2="18" y2="80" stroke="#00ff99" stroke-width="2"/>
-    <rect x="13" y="77" width="10" height="10" rx="2" fill="#00ff99" opacity="0.5"/>
-  </svg>
-
-  <div>
-    <div class="title-main">THEREMIN</div>
-    <div class="title-sub">Touchscreen Electronic Instrument</div>
+<!-- NAV -->
+<nav>
+  <a href="https://ensororac.github.io/phone-theremin/" class="nav-brand">
+    <img src="assets/icon.png" alt="Phone Theremin" class="nav-logo">
+    <span class="nav-title">Phone Theremin</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how-it-works">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#developer">Developer</a>
+    <a href="support/">Support</a>
+    <a href="privacy/">Privacy</a>
   </div>
+</nav>
 
-  <button class="start-btn" id="start-btn">ACTIVATE</button>
+<!-- HERO -->
+<section class="hero">
+  <img src="assets/icon.png" alt="Phone Theremin" class="hero-logo">
+  <p class="hero-sub">Touchscreen Electronic Instrument</p>
+  <h1>Phone Theremin</h1>
+  <p class="hero-tagline">
+    Turn your phone into a theremin — the instrument you play without touching.
+    Control pitch and volume with two fingers across a glowing touchscreen interface.
+  </p>
 
-  <div class="start-hint">
-    Left panel — touch to control volume<br>
-    Right panel — up/down for pitch · left/right for vibrato<br>
-    Both required to produce sound<br>
-    Lift left hand to silence
+  <!-- STORE BADGES -->
+  <div class="store-badges">
+    <!-- Apple App Store -->
+    <a href="https://apps.apple.com/au/app/phone-theremin/id6761706028" class="store-badge" aria-label="Download on the App Store">
+      <!-- Apple logo SVG -->
+      <svg width="28" height="34" viewBox="0 0 28 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M23.5 18.1c-.04-3.77 3.07-5.58 3.21-5.67-1.75-2.56-4.47-2.91-5.44-2.95-2.31-.24-4.52 1.37-5.69 1.37-1.18 0-3.01-1.34-4.95-1.3-2.54.04-4.9 1.49-6.2 3.76-2.66 4.62-.68 11.45 1.9 15.19 1.27 1.84 2.77 3.9 4.75 3.82 1.91-.08 2.63-1.23 4.94-1.23 2.31 0 2.97 1.23 5 1.19 2.06-.04 3.35-1.87 4.61-3.71 1.46-2.12 2.06-4.18 2.09-4.29-.05-.02-4.19-1.61-4.22-6.18z" fill="#c0c8e0"/>
+        <path d="M19.6 6.44c1.06-1.28 1.77-3.06 1.57-4.84-1.52.06-3.35 1.01-4.43 2.27-1 1.11-1.84 2.92-1.61 4.64 1.7.13 3.41-.87 4.47-2.07z" fill="#c0c8e0"/>
+      </svg>
+      <div class="badge-text">
+        <span class="badge-sub">Download on the</span>
+        <span class="badge-name">App Store</span>
+      </div>
+    </a>
+
+    <!-- Google Play (placeholder) -->
+    <div class="store-badge disabled" aria-label="Google Play — coming soon">
+      <!-- Play logo SVG -->
+      <svg width="28" height="30" viewBox="0 0 28 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1.5 1.5L15.5 15L1.5 28.5V1.5z" fill="#6b7280"/>
+        <path d="M1.5 1.5L20 10.5L15.5 15L1.5 1.5z" fill="#6b7280"/>
+        <path d="M1.5 28.5L15.5 15L20 19.5L1.5 28.5z" fill="#6b7280"/>
+        <path d="M20 10.5L26.5 14.25C27.5 14.82 27.5 15.18 26.5 15.75L20 19.5L15.5 15L20 10.5z" fill="#6b7280"/>
+      </svg>
+      <div class="badge-text">
+        <span class="badge-sub">Get it on</span>
+        <span class="badge-name">Google Play</span>
+        <span class="badge-coming">Coming soon</span>
+      </div>
+    </div>
   </div>
+  <p class="age-rating">Age Rating: 4+ · No ads · No data collected · Works offline</p>
+</section>
 
-  <div class="start-hint-rec">
-    ● Rec — tap to record up to 30 seconds<br>
-    tap again to stop early<br>
-    share screen will open to save your .wav file
+<hr class="section-divider">
+
+<!-- INTERFACE SHOWCASE -->
+<section class="showcase" id="interface">
+  <div class="section-wrap">
+    <div class="showcase-inner">
+
+      <!-- Phone mockup SVG -->
+      <div class="showcase-visual">
+        <svg class="phone-mockup" viewBox="0 0 260 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Phone body -->
+          <rect x="4" y="4" width="252" height="512" rx="36" fill="#0a0a18" stroke="#1a1a30" stroke-width="2"/>
+          <!-- Screen area -->
+          <rect x="12" y="16" width="236" height="488" rx="28" fill="#060610"/>
+          <!-- Status bar -->
+          <rect x="12" y="16" width="236" height="32" rx="0" fill="#060610"/>
+          <rect x="12" y="16" width="236" height="2" fill="rgba(0,255,153,0.08)"/>
+
+          <!-- Info bar -->
+          <rect x="12" y="48" width="236" height="56" fill="rgba(6,6,16,0.95)"/>
+          <rect x="12" y="104" width="236" height="1" fill="rgba(0,255,153,0.12)"/>
+
+          <!-- Note display -->
+          <text x="26" y="82" font-family="Courier New, monospace" font-size="14" font-weight="bold" fill="#00ff99" filter="url(#glow)">A4</text>
+          <text x="60" y="82" font-family="Courier New, monospace" font-size="10" fill="#66bb88">440 Hz</text>
+
+          <!-- REC button -->
+          <rect x="185" y="65" width="50" height="24" rx="3" fill="none" stroke="#ff4466" stroke-width="1.5"/>
+          <circle cx="196" cy="77" r="4" fill="#ff4466"/>
+          <text x="204" y="81" font-family="Courier New, monospace" font-size="8" fill="#ff4466" letter-spacing="1">REC</text>
+
+          <!-- Play zones -->
+          <!-- Volume zone (left 25%) -->
+          <rect x="12" y="105" width="59" height="399" fill="rgba(0,255,153,0.015)"/>
+          <!-- Volume label -->
+          <text x="41" y="128" font-family="Courier New, monospace" font-size="6" fill="rgba(0,255,153,0.4)" text-anchor="middle" letter-spacing="1">VOLUME</text>
+          <!-- Volume bar track -->
+          <rect x="31" y="140" width="18" height="300" rx="9" fill="rgba(0,255,153,0.05)" stroke="rgba(0,255,153,0.08)" stroke-width="1"/>
+          <!-- Volume bar fill (65%) -->
+          <rect x="31" y="240" width="18" height="200" rx="9" fill="url(#volGrad)"/>
+
+          <!-- Divider -->
+          <line x1="71" y1="110" x2="71" y2="500" stroke="rgba(0,255,153,0.45)" stroke-width="1"/>
+
+          <!-- Pitch zone (right) -->
+          <rect x="72" y="105" width="176" height="399" fill="rgba(40,0,120,0.025)"/>
+
+          <!-- Pitch label -->
+          <text x="160" y="128" font-family="Courier New, monospace" font-size="6" fill="rgba(80,140,255,0.5)" text-anchor="middle" letter-spacing="1">PITCH · VIBRATO</text>
+
+          <!-- Scale marks -->
+          <line x1="72" y1="175" x2="230" y2="175" stroke="rgba(80,120,255,0.2)" stroke-width="1"/>
+          <text x="233" y="179" font-family="Courier New, monospace" font-size="5.5" fill="rgba(80,120,255,0.4)">C5</text>
+          <line x1="72" y1="245" x2="230" y2="245" stroke="rgba(80,120,255,0.2)" stroke-width="1"/>
+          <text x="233" y="249" font-family="Courier New, monospace" font-size="5.5" fill="rgba(80,120,255,0.4)">A4</text>
+          <line x1="72" y1="315" x2="230" y2="315" stroke="rgba(80,120,255,0.2)" stroke-width="1"/>
+          <text x="233" y="319" font-family="Courier New, monospace" font-size="5.5" fill="rgba(80,120,255,0.4)">C4</text>
+          <line x1="72" y1="410" x2="230" y2="410" stroke="rgba(80,120,255,0.2)" stroke-width="1"/>
+          <text x="233" y="414" font-family="Courier New, monospace" font-size="5.5" fill="rgba(80,120,255,0.4)">C3</text>
+
+          <!-- Pitch orb (touch indicator) -->
+          <circle cx="150" cy="250" r="34" fill="url(#orbGrad)" opacity="0.7"/>
+          <!-- Pitch horizontal line -->
+          <line x1="72" y1="250" x2="248" y2="250" stroke="rgba(0,200,255,0.4)" stroke-width="1"/>
+
+          <!-- Pitch level bar track -->
+          <rect x="228" y="145" width="12" height="290" rx="6" fill="rgba(80,140,255,0.07)" stroke="rgba(80,140,255,0.12)" stroke-width="1"/>
+          <!-- Pitch level fill (50%) -->
+          <rect x="228" y="290" width="12" height="145" rx="6" fill="url(#pitchGrad)"/>
+
+          <!-- Vibrato bar track -->
+          <rect x="80" y="468" width="140" height="10" rx="5" fill="rgba(160,0,255,0.12)" stroke="rgba(160,0,255,0.25)" stroke-width="1"/>
+          <!-- Vibrato fill (40%) -->
+          <rect x="80" y="468" width="56" height="10" rx="5" fill="url(#vibratoGrad)"/>
+
+          <!-- Play hint text -->
+          <text x="160" y="455" font-family="Courier New, monospace" font-size="5" fill="rgba(0,255,153,0.45)" text-anchor="middle" letter-spacing="0.5">↑ HIGHER PITCH   LOWER PITCH ↓</text>
+
+          <!-- Home indicator bar -->
+          <rect x="95" y="508" width="70" height="4" rx="2" fill="rgba(255,255,255,0.15)"/>
+
+          <!-- Gradients & filters -->
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#00ff99"/>
+              <stop offset="80%" stop-color="#00ccff"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.2)"/>
+            </linearGradient>
+            <radialGradient id="orbGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#00ccffbb"/>
+              <stop offset="55%" stop-color="#00ccff33"/>
+              <stop offset="100%" stop-color="transparent"/>
+            </radialGradient>
+            <linearGradient id="pitchGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#00ccff"/>
+              <stop offset="60%" stop-color="#00ccff88"/>
+              <stop offset="100%" stop-color="#00ccff33"/>
+            </linearGradient>
+            <linearGradient id="vibratoGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#aa44ff"/>
+              <stop offset="100%" stop-color="#ff44ff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="showcase-copy">
+        <div class="section-label">The Interface</div>
+        <h2>Two zones.<br><span>Infinite expression.</span></h2>
+        <p>
+          Phone Theremin divides your screen into two touch zones that work together — just like a real theremin, where one hand controls volume and the other controls pitch.
+        </p>
+        <p>
+          <strong style="color:#e2e8f0;">Left zone — Volume:</strong> Touch anywhere to activate sound. Slide up to increase volume, down to reduce it. Lift your finger to silence the instrument instantly — perfect for phrasing and articulation.
+        </p>
+        <p>
+          <strong style="color:#e2e8f0;">Right zone — Pitch & Vibrato:</strong> Slide up and down to move across a two-octave range (C3 to C5). Slide left and right to add vibrato depth. Scale markers show C3, C4, A4 (440 Hz), and C5 as reference points.
+        </p>
+        <p>
+          Both hands on screen at the same time — that's when the music happens.
+        </p>
+      </div>
+    </div>
   </div>
+</section>
 
+<hr class="section-divider">
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-wrap">
+    <div class="features-header">
+      <div class="section-label">What's inside</div>
+      <h2>Everything you need, nothing you don't</h2>
+      <p>A focused instrument app — no ads, no accounts, no data collection.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🎵</span>
+        <div class="feature-title">Authentic Theremin Sound</div>
+        <p class="feature-desc">Custom harmonic synthesis modelled on the original theremin timbre, with smooth portamento glide between notes and built-in reverb for that ethereal sound.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎛️</span>
+        <div class="feature-title">Real-Time Vibrato Control</div>
+        <p class="feature-desc">Slide horizontally in the pitch zone to add vibrato from none to full depth — the same expressive technique used by professional theremin players.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⏺️</span>
+        <div class="feature-title">30-Second Recording</div>
+        <p class="feature-desc">Record your performances as uncompressed WAV files. The iOS Share Sheet opens automatically so you can save to Files, share via Messages, or export to any app.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📱</span>
+        <div class="feature-title">Portrait & Landscape</div>
+        <p class="feature-desc">The interface adapts to both orientations. Landscape mode gives extra horizontal space in the pitch zone for more precise vibrato control.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">✈️</span>
+        <div class="feature-title">Completely Offline</div>
+        <p class="feature-desc">No internet connection needed. Phone Theremin makes no network requests during operation. Your recordings stay on your device — always.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <div class="feature-title">Zero Data Collection</div>
+        <p class="feature-desc">No analytics, no crash reporting SDKs, no advertising, no accounts. Nothing about you or your usage is collected or transmitted anywhere.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works" id="how-it-works">
+  <div class="section-wrap">
+    <div class="hiw-header">
+      <div class="section-label">Getting started</div>
+      <h2>How to play</h2>
+      <p>You'll be making music in under a minute.</p>
+    </div>
+    <div class="hiw-steps">
+      <div class="hiw-step">
+        <div class="hiw-num">1</div>
+        <div class="hiw-body">
+          <div class="hiw-title">Tap ACTIVATE</div>
+          <p class="hiw-desc">iOS requires a tap gesture before any audio can play. Tap the ACTIVATE button to unlock the instrument and load the audio engine.</p>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-num">2</div>
+        <div class="hiw-body">
+          <div class="hiw-title">Place your left finger on the left panel</div>
+          <p class="hiw-desc">Touch anywhere in the volume zone on the left side of the screen. Slide up for more volume, down for less. The instrument is silent until both hands are active.</p>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-num">3</div>
+        <div class="hiw-body">
+          <div class="hiw-title">Place your right finger on the right panel</div>
+          <p class="hiw-desc">Touch the pitch zone on the right. Sound begins immediately. Slide up for higher pitch, down for lower. Drift left and right to add vibrato.</p>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-num">4</div>
+        <div class="hiw-body">
+          <div class="hiw-title">Use the scale markers as reference</div>
+          <p class="hiw-desc">Faint horizontal lines mark C3, C4, A4 (concert pitch 440 Hz), and C5 — two full octaves to explore. The note name and frequency display at the top in real time.</p>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-num">5</div>
+        <div class="hiw-body">
+          <div class="hiw-title">Record your performance</div>
+          <p class="hiw-desc">Tap REC to capture up to 30 seconds. The iOS Share Sheet opens automatically when you stop — save your WAV file to Files or share it directly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- AGE RATING -->
+<div class="age-band">
+  <div class="age-band-inner">
+    <div class="age-badge">4+</div>
+    <div class="age-band-text">
+      <h3>Rated 4+ — Suitable for all ages</h3>
+      <p>No violence, no inappropriate content, no in-app purchases, no advertising. Just music.</p>
+    </div>
+  </div>
 </div>
 
-<!-- ═══ THEREMIN INTERFACE ════════════════════════════════════════ -->
-<div id="theremin">
-
-  <div id="info-bar">
-    <div id="note-display">—</div>
-    <div id="freq-display">— Hz</div>
-    <button id="rec-btn" title="Record performance">
-      <span class="rec-dot"></span>
-      <span id="rec-label">REC</span>
-    </button>
-  </div>
-
-  <!-- Recording countdown bar + seconds label -->
-  <div id="rec-bar-wrap"><div id="rec-bar-fill"></div></div>
-  <div id="rec-countdown">30s</div>
-
-  <!-- Save toast notification -->
-  <div id="save-toast"></div>
-
-  <div id="zones">
-
-    <!-- Volume zone -->
-    <div id="vol-zone">
-      <div class="zone-label">Volume</div>
-      <div id="vol-track"><div id="vol-fill"></div></div>
-      <div id="vol-pct">0%</div>
-      <div id="vol-touch-orb"></div>
+<!-- DEVELOPER -->
+<section class="developer" id="developer">
+  <div class="section-wrap">
+    <div class="dev-card">
+      <div class="dev-avatar">🎵</div>
+      <h2>The Developer</h2>
+      <div class="dev-name">Ensor</div>
+      <p class="dev-bio">
+        Educator, technologist, and musician based in South Australia. Phone Theremin was built as an exploration of what a touchscreen can become — a genuine musical instrument that anyone can pick up and play.
+      </p>
+      <a href="mailto:gawain.duncan@mac.com" class="dev-email">gawain.duncan@mac.com</a>
     </div>
-
-    <div id="divider"></div>
-
-    <!-- Pitch zone -->
-    <div id="pitch-zone">
-      <div class="zone-label">Pitch · Vibrato</div>
-      <!-- Scale marks injected by JS -->
-      <div id="pitch-track"><div id="pitch-fill"></div></div>
-      <div id="pitch-orb"></div>
-      <div id="pitch-line"></div>
-      <div id="vibrato-track"><div id="vibrato-fill"></div></div>
-      <div id="play-hint">↑ higher pitch&nbsp;&nbsp;&nbsp;lower pitch ↓<br>◀ no vibrato&nbsp;&nbsp;&nbsp;vibrato ▶</div>
-    </div>
-
   </div>
-</div>
+</section>
 
-<script>
-'use strict';
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="https://ensororac.github.io/phone-theremin/">Home</a>
+    <a href="support/">Support</a>
+    <a href="privacy/">Privacy Policy</a>
+    <a href="mailto:gawain.duncan@mac.com">Contact</a>
+    <a href="https://apps.apple.com/au/app/phone-theremin/id6761706028">App Store</a>
+  </div>
+  <p>&copy; 2026 Phone Theremin · Developed by Ensor · South Australia</p>
+</footer>
 
-/* ─── CONSTANTS ──────────────────────────────────────────────────── */
-const MIN_FREQ          = 130;    // C3
-const MAX_FREQ          = 523;    // C5
-const VIBRATO_RATE      = 5.4;    // Hz
-const MAX_VIBRATO_CENTS = 40;     // cents
-const PORTAMENTO_TC     = 0.045;  // seconds
-const RELEASE_TC        = 0.11;   // seconds
-const REC_MAX_SECS      = 30;     // maximum recording length
-const REC_SAMPLE_RATE   = 22050;  // Hz — mono WAV (sufficient for theremin range)
-
-const NOTE_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-
-/* ─── AUDIO STATE ────────────────────────────────────────────────── */
-let audioCtx    = null;
-let mainOsc     = null;
-let vibratoOsc  = null;
-let vibratoGain = null;
-let exprGain    = null;
-let dryGain     = null;
-let wetGain     = null;
-let convolver   = null;
-let masterGain  = null;
-
-/* ─── RECORDING STATE ────────────────────────────────────────────── */
-let recNode       = null;   // ScriptProcessorNode
-let recBuffers    = [];     // Float32Array chunks
-let recSamples    = 0;      // total samples collected
-let recording     = false;
-let recTimer      = null;   // countdown interval
-let recStartTime  = 0;
-let recBarAnim    = null;   // requestAnimationFrame handle
-
-/* ─── TOUCH STATE ────────────────────────────────────────────────── */
-let pitchTouchId = null;
-let volTouchId   = null;
-let pitchTouchX  = 0;
-let currentFreq  = 220;
-let currentVol   = 0;
-
-/* ─── HELPERS ────────────────────────────────────────────────────── */
-function yToPitch(y, h) {
-  const t = 1 - Math.max(0, Math.min(1, y / h));
-  return MIN_FREQ * Math.pow(MAX_FREQ / MIN_FREQ, t);
-}
-function yToVol(y, h) {
-  return 1 - Math.max(0, Math.min(1, y / h));
-}
-function freqToNote(f) {
-  const midi = Math.round(12 * Math.log2(f / 440)) + 69;
-  return NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
-}
-function pitchColour(f) {
-  const t = Math.log2(f / MIN_FREQ) / Math.log2(MAX_FREQ / MIN_FREQ);
-  let r, g, b;
-  if (t < 0.2)       { r=0;   g=Math.round(t/0.2*120); b=255; }
-  else if (t < 0.4)  { r=0;   g=Math.round(120+(t-0.2)/0.2*135); b=Math.round(255-(t-0.2)/0.2*255); }
-  else if (t < 0.6)  { r=Math.round((t-0.4)/0.2*200); g=255; b=0; }
-  else if (t < 0.8)  { r=255; g=Math.round(255-(t-0.6)/0.2*155); b=0; }
-  else               { r=255; g=Math.round(100-(t-0.8)/0.2*100); b=0; }
-  return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
-}
-
-/* ─── SYNTHETIC REVERB ───────────────────────────────────────────── */
-function buildReverb(ctx) {
-  const sr = ctx.sampleRate;
-  const dur = 1.8, decay = 2.8;
-  const buf = ctx.createBuffer(2, Math.floor(sr * dur), sr);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = buf.getChannelData(ch);
-    for (let i = 0; i < d.length; i++)
-      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, decay);
-  }
-  const conv = ctx.createConvolver();
-  conv.buffer = buf;
-  return conv;
-}
-
-/* ─── BUILD AUDIO GRAPH ──────────────────────────────────────────── */
-function buildAudio() {
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  const hmA = [0, 1.0, 0.48, 0.24, 0.11, 0.055, 0.025, 0.01];
-  const real = new Float32Array(hmA);
-  const imag = new Float32Array(hmA.length);
-  const wave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: false });
-
-  mainOsc = audioCtx.createOscillator();
-  mainOsc.setPeriodicWave(wave);
-  mainOsc.frequency.value = currentFreq;
-
-  vibratoOsc = audioCtx.createOscillator();
-  vibratoOsc.type = 'sine';
-  vibratoOsc.frequency.value = VIBRATO_RATE;
-  vibratoGain = audioCtx.createGain();
-  vibratoGain.gain.value = 0;
-  vibratoOsc.connect(vibratoGain);
-  vibratoGain.connect(mainOsc.detune);
-
-  exprGain = audioCtx.createGain();
-  exprGain.gain.value = 0;
-
-  dryGain = audioCtx.createGain();
-  dryGain.gain.value = 0.7;
-  convolver = buildReverb(audioCtx);
-  wetGain = audioCtx.createGain();
-  wetGain.gain.value = 0.38;
-
-  masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.88;
-
-  mainOsc.connect(exprGain);
-  exprGain.connect(dryGain);
-  exprGain.connect(convolver);
-  dryGain.connect(masterGain);
-  convolver.connect(wetGain);
-  wetGain.connect(masterGain);
-  masterGain.connect(audioCtx.destination);
-
-  mainOsc.start();
-  vibratoOsc.start();
-}
-
-/* ─── AUDIO CONTROL ──────────────────────────────────────────────── */
-function setPitch(f) {
-  if (!audioCtx) return;
-  currentFreq = f;
-  mainOsc.frequency.setTargetAtTime(f, audioCtx.currentTime, PORTAMENTO_TC);
-}
-function setVolume(v) {
-  if (!audioCtx) return;
-  currentVol = v;
-  exprGain.gain.setTargetAtTime(v * v, audioCtx.currentTime, 0.03);
-}
-function setVibrato(depthCents) {
-  if (!audioCtx || !vibratoGain) return;
-  vibratoGain.gain.setTargetAtTime(depthCents, audioCtx.currentTime, 0.08);
-}
-function soundOff() {
-  if (!audioCtx) return;
-  currentVol = 0;
-  exprGain.gain.setTargetAtTime(0, audioCtx.currentTime, RELEASE_TC);
-}
-
-/* ─── WAV ENCODING ───────────────────────────────────────────────── */
-/*
- * Encodes a mono Float32Array of PCM samples into a WAV ArrayBuffer.
- * Returns ArrayBuffer so caller can either:
- *   - base64-encode it for Capacitor Filesystem API (native iOS)
- *   - wrap in a Blob for browser <a download> fallback
- */
-function encodeWAV(samples, sampleRate) {
-  const numSamples = samples.length;
-  const buffer = new ArrayBuffer(44 + numSamples * 2);
-  const view   = new DataView(buffer);
-
-  function writeStr(offset, str) {
-    for (let i = 0; i < str.length; i++)
-      view.setUint8(offset + i, str.charCodeAt(i));
-  }
-  function floatTo16(f) {
-    const s = Math.max(-1, Math.min(1, f));
-    return s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-
-  // RIFF header
-  writeStr(0,  'RIFF');
-  view.setUint32(4,  36 + numSamples * 2, true);
-  writeStr(8,  'WAVE');
-  writeStr(12, 'fmt ');
-  view.setUint32(16, 16, true);          // chunk size
-  view.setUint16(20, 1,  true);          // PCM
-  view.setUint16(22, 1,  true);          // mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true); // byte rate
-  view.setUint16(32, 2,  true);          // block align
-  view.setUint16(34, 16, true);          // bits per sample
-  writeStr(36, 'data');
-  view.setUint32(40, numSamples * 2, true);
-
-  // PCM samples
-  let offset = 44;
-  for (let i = 0; i < numSamples; i++) {
-    view.setInt16(offset, floatTo16(samples[i]), true);
-    offset += 2;
-  }
-
-  return buffer; // ArrayBuffer — not Blob
-}
-
-/* Convert ArrayBuffer → base64 string (for Capacitor Filesystem.writeFile)
- *
- * IMPORTANT: btoa() encodes 3 raw bytes → 4 base64 chars.
- * We must NOT split the binary string at arbitrary byte boundaries
- * and call btoa() per-chunk — that corrupts the base64 at every seam.
- * Instead we build the complete binary string first, then call btoa once.
- *
- * For files up to ~10MB (well within our 30s WAV max of ~5MB),
- * building the full string via a DataView loop is safe and fast.
- */
-function bufferToBase64(buffer) {
-  const bytes  = new Uint8Array(buffer);
-  const len    = bytes.byteLength;
-  // Build binary string byte-by-byte — avoids spread call-stack overflow
-  // and keeps the full string intact for a single btoa() call
-  const chars  = new Array(len);
-  for (let i = 0; i < len; i++)
-    chars[i] = String.fromCharCode(bytes[i]);
-  return btoa(chars.join(''));
-}
-
-/* ─── RECORDING — START ──────────────────────────────────────────── */
-function startRecording() {
-  if (!audioCtx || recording) return;
-
-  recBuffers   = [];
-  recSamples   = 0;
-  recording    = true;
-  recStartTime = Date.now();
-
-  /*
-   * ScriptProcessorNode taps the master output.
-   * bufferSize=4096 is the most compatible value on iOS WKWebView.
-   * We record mono from channel 0.
-   * NOTE: ScriptProcessorNode is deprecated but AudioWorklet is not
-   * available in Capacitor WKWebView on iOS 16/17 — SPN is the
-   * only reliable approach here.
-   */
-  recNode = audioCtx.createScriptProcessor(4096, 1, 1);
-  masterGain.connect(recNode);
-  recNode.connect(audioCtx.destination);
-
-  const maxSamples = REC_MAX_SECS * audioCtx.sampleRate;
-
-  recNode.onaudioprocess = (e) => {
-    if (!recording) return;
-    const input = e.inputBuffer.getChannelData(0);
-    recBuffers.push(new Float32Array(input)); // copy — input buffer is reused
-    recSamples += input.length;
-
-    if (recSamples >= maxSamples) {
-      stopRecording();
-    }
-  };
-
-  // UI
-  const btn  = document.getElementById('rec-btn');
-  const lbl  = document.getElementById('rec-label');
-  const wrap = document.getElementById('rec-bar-wrap');
-  const fill = document.getElementById('rec-bar-fill');
-
-  const countdown = document.getElementById('rec-countdown');
-
-  btn.classList.add('recording');
-  lbl.textContent = 'STOP';
-  wrap.style.display    = 'block';
-  fill.style.width      = '0%';
-  countdown.style.display = 'block';
-  countdown.textContent   = REC_MAX_SECS + 's';
-
-  // Animate progress bar + countdown using rAF
-  recBarAnim = requestAnimationFrame(function animBar() {
-    if (!recording) return;
-    const elapsed  = (Date.now() - recStartTime) / 1000;
-    const pct      = Math.min(100, (elapsed / REC_MAX_SECS) * 100);
-    const secsLeft = Math.max(0, Math.ceil(REC_MAX_SECS - elapsed));
-    fill.style.width      = pct + '%';
-    countdown.textContent = secsLeft + 's';
-    if (pct < 100) recBarAnim = requestAnimationFrame(animBar);
-  });
-}
-
-/* ─── RECORDING — STOP ───────────────────────────────────────────── */
-function stopRecording() {
-  if (!recording) return;
-  recording = false;
-
-  if (recBarAnim) { cancelAnimationFrame(recBarAnim); recBarAnim = null; }
-
-  // Disconnect recorder node
-  if (recNode) {
-    masterGain.disconnect(recNode);
-    recNode.disconnect();
-    recNode.onaudioprocess = null;
-    recNode = null;
-  }
-
-  // UI: saving state
-  const btn  = document.getElementById('rec-btn');
-  const lbl  = document.getElementById('rec-label');
-  const wrap = document.getElementById('rec-bar-wrap');
-  const fill = document.getElementById('rec-bar-fill');
-
-  const countdown = document.getElementById('rec-countdown');
-  btn.classList.remove('recording');
-  btn.classList.add('saving');
-  lbl.textContent       = '···';
-  fill.style.width      = '100%';
-  countdown.textContent = '0s';
-
-  // Assemble all chunks into one Float32Array
-  const merged = new Float32Array(recSamples);
-  let offset = 0;
-  for (const chunk of recBuffers) {
-    merged.set(chunk, offset);
-    offset += chunk.length;
-  }
-  recBuffers = [];
-
-  // Encode and save — small timeout lets UI repaint first
-  setTimeout(async () => {
-    try {
-      const sampleRate = audioCtx ? audioCtx.sampleRate : 44100;
-      const wavBuffer  = encodeWAV(merged, sampleRate); // returns ArrayBuffer
-
-      // Generate timestamped filename
-      const now = new Date();
-      const ts  = now.getFullYear().toString() +
-                  String(now.getMonth()+1).padStart(2,'0') +
-                  String(now.getDate()).padStart(2,'0') + '_' +
-                  String(now.getHours()).padStart(2,'0') +
-                  String(now.getMinutes()).padStart(2,'0') +
-                  String(now.getSeconds()).padStart(2,'0');
-      const filename = 'theremin_' + ts + '.wav';
-
-      if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-        // ── NATIVE iOS: write to Documents dir + trigger Share Sheet ──
-        // IMPORTANT: omit 'encoding' entirely for binary/base64 writes.
-        // Passing encoding:'base64' is WRONG — Capacitor only accepts
-        // 'utf8'/'ascii'/'utf16' for encoding; omitting it means the
-        // plugin treats data as base64 and decodes it to binary on disk.
-        const base64 = bufferToBase64(wavBuffer);
-        const { uri } = await Capacitor.Plugins.Filesystem.writeFile({
-          path: filename,
-          data: base64,
-          directory: 'DOCUMENTS'
-        });
-        await Capacitor.Plugins.Share.share({
-          title: 'Phone Theremin Recording',
-          text:  'My theremin performance',
-          url:   uri,
-          dialogTitle: 'Save or share your recording'
-        });
-        showToast('Share sheet opened · choose Files to save', false);
-      } else {
-        // ── WEB BROWSER fallback ──
-        const blob = new Blob([wavBuffer], { type: 'audio/wav' });
-        const url  = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url; link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        showToast('Recording saved · ' + filename, false);
-      }
-    } catch (err) {
-      console.error('WAV save error:', err);
-      showToast('Save failed — ' + (err.message || 'try again'), true);
-    }
-
-    // Reset button
-    btn.classList.remove('saving');
-    lbl.textContent = 'REC';
-    wrap.style.display = 'none';
-    fill.style.width   = '0%';
-    document.getElementById('rec-countdown').style.display = 'none';
-  }, 80);
-}
-
-/* ─── TOAST ──────────────────────────────────────────────────────── */
-function showToast(msg, isError) {
-  const toast = document.getElementById('save-toast');
-  toast.textContent = msg;
-  toast.className   = isError ? 'error' : '';
-  toast.style.display = 'block';
-  setTimeout(() => { toast.style.display = 'none'; }, 4000);
-}
-
-/* ─── REC BUTTON HANDLER ─────────────────────────────────────────── */
-document.getElementById('rec-btn').addEventListener('click', () => {
-  if (recording) {
-    stopRecording();
-  } else {
-    startRecording();
-  }
-});
-
-/* ─── DOM REFS ───────────────────────────────────────────────────── */
-const volZone     = document.getElementById('vol-zone');
-const pitchZone   = document.getElementById('pitch-zone');
-const volFill     = document.getElementById('vol-fill');
-const volPct      = document.getElementById('vol-pct');
-const volOrb      = document.getElementById('vol-touch-orb');
-const pitchOrb    = document.getElementById('pitch-orb');
-const pitchLine   = document.getElementById('pitch-line');
-const vibratoFill = document.getElementById('vibrato-fill');
-const pitchTrackFill = document.getElementById('pitch-fill');
-const noteDisplay = document.getElementById('note-display');
-const freqDisplay = document.getElementById('freq-display');
-
-/* ─── VISUAL UPDATES ─────────────────────────────────────────────── */
-function updateVolVisual(y, h, active) {
-  if (active) {
-    const v = yToVol(y, h);
-    volFill.style.height = Math.round(v * 100) + '%';
-    volPct.textContent   = Math.round(v * 100) + '%';
-    volOrb.style.display = 'block';
-    volOrb.style.left    = '50%';
-    volOrb.style.top     = y + 'px';
-    volZone.classList.add('active');
-  } else {
-    volFill.style.height = '0%';
-    volPct.textContent   = '0%';
-    volOrb.style.display = 'none';
-    volZone.classList.remove('active');
-  }
-}
-
-function updatePitchVisual(y, h, active) {
-  if (active) {
-    const f   = yToPitch(y, h);
-    const col = pitchColour(f);
-    const pct = Math.round((1 - Math.max(0, Math.min(1, y / h))) * 100);
-
-    pitchOrb.style.display    = 'block';
-    pitchOrb.style.left       = pitchTouchX + 'px';
-    pitchOrb.style.top        = y + 'px';
-    pitchOrb.style.background = `radial-gradient(circle, ${col}bb 0%, ${col}33 55%, transparent 75%)`;
-    pitchOrb.style.boxShadow  = `0 0 28px ${col}88, 0 0 56px ${col}33`;
-
-    pitchLine.style.display   = 'block';
-    pitchLine.style.top       = y + 'px';
-    pitchLine.style.background= `linear-gradient(to right, transparent 0%, ${col}22 10%, ${col}66 50%, ${col}22 90%, transparent 100%)`;
-
-    pitchTrackFill.style.height     = pct + '%';
-    pitchTrackFill.style.background = `linear-gradient(to top, ${col} 0%, ${col}88 60%, ${col}33 100%)`;
-    pitchTrackFill.style.boxShadow  = `0 0 10px ${col}88`;
-
-    noteDisplay.textContent      = freqToNote(f);
-    noteDisplay.style.color      = col;
-    noteDisplay.style.textShadow = `0 0 10px ${col}`;
-    freqDisplay.textContent      = Math.round(f) + ' Hz';
-
-    pitchZone.classList.add('active');
-  } else {
-    pitchOrb.style.display    = 'none';
-    pitchLine.style.display   = 'none';
-    pitchTrackFill.style.height = '0%';
-    noteDisplay.textContent      = '—';
-    noteDisplay.style.color      = '#00ff99';
-    noteDisplay.style.textShadow = '0 0 10px #00ff99';
-    freqDisplay.textContent      = '— Hz';
-    vibratoFill.style.width      = '0%';
-    pitchZone.classList.remove('active');
-  }
-}
-
-/* ─── VIBRATO CALCULATION ────────────────────────────────────────── */
-function applyVibratoFromX(x) {
-  const w = pitchZone.offsetWidth;
-  const ratio = Math.max(0, Math.min(1, x / w));
-  setVibrato(ratio * MAX_VIBRATO_CENTS);
-  vibratoFill.style.width = Math.round(ratio * 100) + '%';
-}
-
-/* ─── SCALE MARKS ────────────────────────────────────────────────── */
-function addScaleMarks() {
-  pitchZone.querySelectorAll('.scale-mark').forEach(el => el.remove());
-  const marks = [
-    { f: 1047, label: 'C6 · 1047 Hz' },
-    { f: 523,  label: 'C5 · 523 Hz' },
-    { f: 440,  label: 'A4 · 440 Hz' },
-    { f: 262,  label: 'C4 · 262 Hz' },
-    { f: 131,  label: 'C3 · 131 Hz' },
-  ];
-  const logR = Math.log2(MAX_FREQ / MIN_FREQ);
-  marks.forEach(({ f, label }) => {
-    const t   = Math.log2(f / MIN_FREQ) / logR;
-    const top = (1 - t) * 100;
-    const el  = document.createElement('div');
-    el.className = 'scale-mark';
-    el.style.top = `calc(${top}% - 1px)`;
-    el.innerHTML = `<div class="scale-line"></div><div class="scale-label">${label}</div>`;
-    pitchZone.appendChild(el);
-  });
-}
-
-/* ─── TOUCH ZONE DETECTION ───────────────────────────────────────── */
-function inVolZone(touch) {
-  const r = document.getElementById('zones').getBoundingClientRect();
-  return (touch.clientX - r.left) < r.width * 0.35;
-}
-function zoneY(touch, el) {
-  return touch.clientY - el.getBoundingClientRect().top;
-}
-
-/* ─── TOUCH HANDLERS ─────────────────────────────────────────────── */
-const zonesEl = document.getElementById('zones');
-
-zonesEl.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const h = zonesEl.getBoundingClientRect().height;
-  for (const t of e.changedTouches) {
-    if (inVolZone(t) && volTouchId === null) {
-      volTouchId = t.identifier;
-      const y = zoneY(t, volZone);
-      updateVolVisual(y, h, true);
-      if (pitchTouchId !== null) setVolume(yToVol(y, h));
-    } else if (!inVolZone(t) && pitchTouchId === null) {
-      pitchTouchId = t.identifier;
-      const y = zoneY(t, pitchZone);
-      pitchTouchX = t.clientX - pitchZone.getBoundingClientRect().left;
-      setPitch(yToPitch(y, h));
-      applyVibratoFromX(pitchTouchX);
-      updatePitchVisual(y, h, true);
-      if (volTouchId !== null) setVolume(currentVol);
-    }
-  }
-}, { passive: false });
-
-zonesEl.addEventListener('touchmove', e => {
-  e.preventDefault();
-  const h = zonesEl.getBoundingClientRect().height;
-  for (const t of e.changedTouches) {
-    if (t.identifier === volTouchId) {
-      const y = zoneY(t, volZone);
-      updateVolVisual(y, h, true);
-      if (pitchTouchId !== null) setVolume(yToVol(y, h));
-    } else if (t.identifier === pitchTouchId) {
-      const y = zoneY(t, pitchZone);
-      pitchTouchX = t.clientX - pitchZone.getBoundingClientRect().left;
-      setPitch(yToPitch(y, h));
-      applyVibratoFromX(pitchTouchX);
-      updatePitchVisual(y, h, true);
-    }
-  }
-}, { passive: false });
-
-function handleTouchEnd(e) {
-  e.preventDefault();
-  for (const t of e.changedTouches) {
-    if (t.identifier === volTouchId) {
-      volTouchId = null;
-      soundOff();
-      updateVolVisual(0, 1, false);
-    } else if (t.identifier === pitchTouchId) {
-      pitchTouchId = null;
-      soundOff();
-      setVibrato(0);
-      updatePitchVisual(0, 1, false);
-    }
-  }
-}
-zonesEl.addEventListener('touchend',    handleTouchEnd, { passive: false });
-zonesEl.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-
-/* ─── APP FLOW ───────────────────────────────────────────────────── */
-document.getElementById('start-btn').addEventListener('click', () => {
-  buildAudio();
-  addScaleMarks();
-  document.getElementById('start-screen').style.display = 'none';
-  const th = document.getElementById('theremin');
-  th.style.display = 'flex';
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    if (recording) stopRecording();
-    soundOff();
-    if (audioCtx) {
-      audioCtx.close().catch(() => {});
-      audioCtx = null; mainOsc = null; vibratoOsc = null;
-      vibratoGain = null; exprGain = null; recNode = null;
-    }
-  } else {
-    if (!audioCtx) {
-      document.getElementById('theremin').style.display = 'none';
-      document.getElementById('start-screen').style.display = 'flex';
-      volTouchId = null; pitchTouchId = null;
-      updateVolVisual(0, 1, false);
-      updatePitchVisual(0, 1, false);
-      // Reset recording UI
-      const btn  = document.getElementById('rec-btn');
-      const lbl  = document.getElementById('rec-label');
-      const wrap = document.getElementById('rec-bar-wrap');
-      btn.classList.remove('recording', 'saving');
-      lbl.textContent = 'REC';
-      wrap.style.display = 'none';
-      document.getElementById('rec-countdown').style.display = 'none';
-      recording = false; recBuffers = []; recSamples = 0;
-    }
-  }
-});
-</script>
 </body>
 </html>
