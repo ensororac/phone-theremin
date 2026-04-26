@@ -95,7 +95,7 @@
     /* Top bar — pushed below iOS status bar using safe area inset */
     #info-bar {
       position: absolute; top: 0; left: 0; right: 0;
-      height: calc(50px + env(safe-area-inset-top, 20px));
+      height: calc(100px + env(safe-area-inset-top, 20px));
       padding-top: env(safe-area-inset-top, 20px);
       display: flex; align-items: center;
       justify-content: space-between; padding-left: 14px; padding-right: 14px;
@@ -120,12 +120,13 @@
       border: 1.5px solid #ff4466;
       color: #ff4466;
       font-family: 'Courier New', monospace;
-      font-size: 0.668rem; letter-spacing: 0.2em; /* +15% from 0.58rem */
-      padding: 6px 12px; cursor: pointer;           /* +15% from 5/10px */
+      font-size: 0.668rem; letter-spacing: 0.2em;
+      padding: 12px 16px; cursor: pointer;
       text-transform: uppercase; border-radius: 3px;
       display: flex; align-items: center; gap: 6px;
       transition: all 0.2s;
       flex-shrink: 0;
+      min-height: 56px;
     }
     #rec-btn:active { opacity: 0.7; }
     #rec-btn.recording {
@@ -160,7 +161,7 @@
     /* ── RECORD COUNTDOWN BAR (1px above the green info-bar divider line) ── */
     #rec-bar-wrap {
       position: absolute;
-      top: calc(50px + env(safe-area-inset-top, 20px) - 4px); /* 3px bar ends 1px above the border */
+      top: calc(100px + env(safe-area-inset-top, 20px) - 4px); /* 3px bar ends 1px above the border */
       left: 0; right: 0; height: 3px;
       background: rgba(255,34,68,0.12);
       z-index: 10; display: none;
@@ -174,7 +175,7 @@
     /* Countdown seconds label — sits just below the bar */
     #rec-countdown {
       position: absolute;
-      top: calc(50px + env(safe-area-inset-top, 20px) + 2px); /* just below the bar */
+      top: calc(100px + env(safe-area-inset-top, 20px) + 2px); /* just below the bar */
       right: 14px;
       font-size: 0.55rem; letter-spacing: 0.12em;
       color: rgba(255,68,102,0.75);
@@ -445,8 +446,8 @@
 'use strict';
 
 /* ─── CONSTANTS ──────────────────────────────────────────────────── */
-const MIN_FREQ          = 130;    // C3
-const MAX_FREQ          = 523;    // C5
+const MIN_FREQ          = 220;    // A3
+const MAX_FREQ          = 880;    // A5
 const VIBRATO_RATE      = 5.4;    // Hz
 const MAX_VIBRATO_CENTS = 40;     // cents
 const PORTAMENTO_TC     = 0.045;  // seconds
@@ -782,11 +783,10 @@ function stopRecording() {
         });
         await Capacitor.Plugins.Share.share({
           title: 'Phone Theremin Recording',
-          text:  'My theremin performance',
           url:   uri,
           dialogTitle: 'Save or share your recording'
         });
-        showToast('Share sheet opened · choose Files to save', false);
+        showToast('Share screen opened · choose Files to save', false);
       } else {
         // ── WEB BROWSER fallback ──
         const blob = new Blob([wavBuffer], { type: 'audio/wav' });
@@ -913,11 +913,11 @@ function applyVibratoFromX(x) {
 function addScaleMarks() {
   pitchZone.querySelectorAll('.scale-mark').forEach(el => el.remove());
   const marks = [
-    { f: 1047, label: 'C6 · 1047 Hz' },
-    { f: 523,  label: 'C5 · 523 Hz' },
+    { f: 880,  label: 'A5 · 880 Hz' },
+    { f: 659,  label: 'E5 · 659 Hz' },
     { f: 440,  label: 'A4 · 440 Hz' },
-    { f: 262,  label: 'C4 · 262 Hz' },
-    { f: 131,  label: 'C3 · 131 Hz' },
+    { f: 330,  label: 'E4 · 330 Hz' },
+    { f: 220,  label: 'A3 · 220 Hz' },
   ];
   const logR = Math.log2(MAX_FREQ / MIN_FREQ);
   marks.forEach(({ f, label }) => {
